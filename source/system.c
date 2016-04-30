@@ -2,9 +2,9 @@
 
 #include "render.h"
 
-#include <SDL.h>
 #include <stdlib.h>
 #include <time.h>
+#include <Windows.h>
 
 void system_setup()
 {
@@ -21,4 +21,9 @@ void system_teardown()
 int32_t system_rand()
 {
 	return rand();
+}
+
+void system_sleep(uint32_t milliseconds)
+{
+	Sleep(milliseconds);
 }

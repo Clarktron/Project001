@@ -101,6 +101,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -112,6 +113,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -130,6 +132,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -148,9 +151,11 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="source\game.c" />
     <ClCompile Include="source\input.c" />
     <ClCompile Include="source\log.c" />
     <ClCompile Include="source\main.c" />
@@ -229,6 +234,7 @@
     <ClInclude Include="dependencies\SDL_types.h" />
     <ClInclude Include="dependencies\SDL_version.h" />
     <ClInclude Include="dependencies\SDL_video.h" />
+    <ClInclude Include="include\game.h" />
     <ClInclude Include="include\input.h" />
     <ClInclude Include="include\log.h" />
     <ClInclude Include="include\render.h" />
@@ -259,6 +265,9 @@
     <Library Include="libraries\x86\SDL2main.lib" />
     <Library Include="libraries\x86\SDL2test.lib" />
     <Library Include="libraries\x86\SDL2_ttf.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="font\font.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

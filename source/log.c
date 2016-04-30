@@ -15,7 +15,7 @@ int32_t log_setup()
 		errno_t err = fopen_s(&_file, _filename, _mode);
 		if (err)
 		{
-			printf("log: %s\n", strerror(err));
+			printf("log: %i\n", err);
 			return -2;
 		}
 		if (_file == NULL)

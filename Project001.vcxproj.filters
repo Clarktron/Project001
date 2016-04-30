@@ -21,6 +21,9 @@
     <Filter Include="dependencies">
       <UniqueIdentifier>{3da1937c-0833-43c1-8cc4-f36bea1cdba6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="font">
+      <UniqueIdentifier>{b33946b0-5a73-4252-9b2d-b9ac03fa6d66}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.c">
@@ -36,6 +39,9 @@
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\log.c">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\game.c">
       <Filter>source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -265,6 +271,9 @@
     <ClInclude Include="include\log.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\game.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="libraries\x86\libfreetype-6.dll">
@@ -331,5 +340,10 @@
     <Library Include="libraries\x64\SDL2test.lib">
       <Filter>libraries\x64</Filter>
     </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="font\font.ttf">
+      <Filter>font</Filter>
+    </Font>
   </ItemGroup>
 </Project>

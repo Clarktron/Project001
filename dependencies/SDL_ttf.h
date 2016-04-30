@@ -241,11 +241,11 @@ extern DECLSPEC SDL_Surface * SDLCALL TTF_RenderGlyph_Blended(TTF_Font *font,
 
 /* For compatibility with previous versions, here are the old functions */
 #define TTF_RenderText(font, text, fg, bg)  \
-    TTF_RenderText_Shaded(font, text, fg, bg)
+    TTF_RenderText_Shaded(_font, text, fg, bg)
 #define TTF_RenderUTF8(font, text, fg, bg)  \
-    TTF_RenderUTF8_Shaded(font, text, fg, bg)
+    TTF_RenderUTF8_Shaded(_font, text, fg, bg)
 #define TTF_RenderUNICODE(font, text, fg, bg)   \
-    TTF_RenderUNICODE_Shaded(font, text, fg, bg)
+    TTF_RenderUNICODE_Shaded(_font, text, fg, bg)
 
 /* Close an opened font file */
 extern DECLSPEC void SDLCALL TTF_CloseFont(TTF_Font *font);
