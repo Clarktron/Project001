@@ -1,17 +1,355 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
+    <Filter Include="include">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="source">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
+    <Filter Include="libraries">
+      <UniqueIdentifier>{f24ae099-d106-4ad0-b931-21a2c2a611a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libraries\x64">
+      <UniqueIdentifier>{e6163fbf-b8d1-4d4c-aedc-9bbbfd2dcc7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libraries\x86">
+      <UniqueIdentifier>{2a7c4fc3-93fb-40ac-9599-08867eced272}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dependencies">
+      <UniqueIdentifier>{3da1937c-0833-43c1-8cc4-f36bea1cdba6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="font">
+      <UniqueIdentifier>{b33946b0-5a73-4252-9b2d-b9ac03fa6d66}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="source\main.c">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\system.c">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\input.c">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\render.c">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\log.c">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\game.c">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\menu.c">
+      <Filter>source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\system.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\begin_code.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\close_code.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_assert.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_atomic.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_audio.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_bits.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_blendmode.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_clipboard.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_config.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_cpuinfo.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_egl.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_endian.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_error.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_events.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_filesystem.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_gamecontroller.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_gesture.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_haptic.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_hints.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_joystick.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_keyboard.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_keycode.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_loadso.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_log.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_main.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_messagebox.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_mouse.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_mutex.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_name.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_opengl.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_opengl_glext.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_opengles.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_opengles2.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_opengles2_gl2.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_opengles2_gl2ext.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_opengles2_gl2platform.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_opengles2_khrplatform.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_pixels.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_platform.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_power.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_quit.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_rect.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_render.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_revision.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_rwops.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_scancode.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_shape.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_stdinc.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_surface.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_system.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_syswm.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_test.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_test_assert.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_test_common.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_test_compare.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_test_crc32.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_test_font.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_test_fuzzer.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_test_harness.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_test_images.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_test_log.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_test_md5.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_test_random.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_thread.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_timer.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_touch.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_ttf.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_types.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_version.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\SDL_video.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="include\render.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\input.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\game.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\menu.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="libraries\x86\libfreetype-6.dll">
+      <Filter>libraries\x86</Filter>
+    </None>
+    <None Include="libraries\x86\SDL2.dll">
+      <Filter>libraries\x86</Filter>
+    </None>
+    <None Include="libraries\x86\SDL2_ttf.dll">
+      <Filter>libraries\x86</Filter>
+    </None>
+    <None Include="libraries\x86\zlib1.dll">
+      <Filter>libraries\x86</Filter>
+    </None>
+    <None Include="libraries\x64\libfreetype-6.dll">
+      <Filter>libraries\x64</Filter>
+    </None>
+    <None Include="libraries\x64\SDL2.dll">
+      <Filter>libraries\x64</Filter>
+    </None>
+    <None Include="libraries\x64\SDL2_ttf.dll">
+      <Filter>libraries\x64</Filter>
+    </None>
+    <None Include="libraries\x64\zlib1.dll">
+      <Filter>libraries\x64</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="libraries\x86\LICENSE.freetype.txt">
+      <Filter>libraries\x86</Filter>
+    </Text>
+    <Text Include="libraries\x86\LICENSE.zlib.txt">
+      <Filter>libraries\x86</Filter>
+    </Text>
+    <Text Include="libraries\x64\LICENSE.freetype.txt">
+      <Filter>libraries\x64</Filter>
+    </Text>
+    <Text Include="libraries\x64\LICENSE.zlib.txt">
+      <Filter>libraries\x64</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="libraries\x86\SDL2.lib">
+      <Filter>libraries\x86</Filter>
+    </Library>
+    <Library Include="libraries\x86\SDL2_ttf.lib">
+      <Filter>libraries\x86</Filter>
+    </Library>
+    <Library Include="libraries\x86\SDL2main.lib">
+      <Filter>libraries\x86</Filter>
+    </Library>
+    <Library Include="libraries\x86\SDL2test.lib">
+      <Filter>libraries\x86</Filter>
+    </Library>
+    <Library Include="libraries\x64\SDL2.lib">
+      <Filter>libraries\x64</Filter>
+    </Library>
+    <Library Include="libraries\x64\SDL2_ttf.lib">
+      <Filter>libraries\x64</Filter>
+    </Library>
+    <Library Include="libraries\x64\SDL2main.lib">
+      <Filter>libraries\x64</Filter>
+    </Library>
+    <Library Include="libraries\x64\SDL2test.lib">
+      <Filter>libraries\x64</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="font\font.ttf">
+      <Filter>font</Filter>
+    </Font>
   </ItemGroup>
 </Project>
