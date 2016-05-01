@@ -87,9 +87,17 @@ void render_circle(int32_t x, int32_t y, double radius, uint8_t r, uint8_t g, ui
 	}
 }
 
-void render_load_text(TEXTURE *texture, const char *text, uint32_t font_number, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+void render_rectangle(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+	SDL_Rect rect = {x, y, w, h};
+	SDL_SetRenderDrawColor(_renderer, r, g, b, a);
+	SDL_RenderFillRect(_renderer, &rect);
+}
+
+void render_draw_text(int32_t x, int32_t y, const char *text, uint32_t font_number, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
 	SDL_Color color = {r, g, b, a};
+	TEXTURE texture;
 	SDL_Surface *text_surface = TTF_RenderText_Solid(_font_list[font_number].font, text, color);
 	if (text_surface == NULL)
 	{
@@ -103,10 +111,14 @@ void render_load_text(TEXTURE *texture, const char *text, uint32_t font_number, 
 		SDL_FreeSurface(text_surface);
 		return;
 	}
-	texture->texture = temp;
-	texture->w = text_surface->w;
-	texture->h = text_surface->h;
+	texture.texture = temp;
+	texture.w = text_surface->w;
+	texture.h = text_surface->h;
 	SDL_FreeSurface(text_surface);
+
+	render_draw_texture(texture, x, y);
+
+	render_delete_texture(texture);
 }
 
 void render_draw_texture(TEXTURE texture, int32_t x, int32_t y)
@@ -115,6 +127,11 @@ void render_draw_texture(TEXTURE texture, int32_t x, int32_t y)
 	SDL_Rect dst = {x, y, texture.w, texture.h};
 
 	SDL_RenderCopy(_renderer, texture.texture, &src, &dst);
+}
+
+void render_delete_texture(TEXTURE texture)
+{
+	SDL_DestroyTexture(texture.texture);
 }
 
 void render_begin_frame()
@@ -131,7 +148,7 @@ void render_end_frame()
 		uint32_t elapsed_time = SDL_GetTicks() - _frame_tick;
 		if (elapsed_time < 1000.0 / FPS)
 		{
-			SDL_Delay((1000.0 / FPS) - elapsed_time);
+			SDL_Delay((uint32_t)(1000.0 / FPS) - elapsed_time);
 		}
 		_frame_tick = SDL_GetTicks();
 	}

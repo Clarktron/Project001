@@ -44,6 +44,9 @@
     <ClCompile Include="source\game.c">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="source\menu.c">
+      <Filter>source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\system.h">
@@ -272,6 +275,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\game.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\menu.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

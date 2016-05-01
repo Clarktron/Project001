@@ -159,6 +159,7 @@
     <ClCompile Include="source\input.c" />
     <ClCompile Include="source\log.c" />
     <ClCompile Include="source\main.c" />
+    <ClCompile Include="source\menu.c" />
     <ClCompile Include="source\render.c" />
     <ClCompile Include="source\system.c" />
   </ItemGroup>
@@ -237,6 +238,7 @@
     <ClInclude Include="include\game.h" />
     <ClInclude Include="include\input.h" />
     <ClInclude Include="include\log.h" />
+    <ClInclude Include="include\menu.h" />
     <ClInclude Include="include\render.h" />
     <ClInclude Include="include\system.h" />
   </ItemGroup>
