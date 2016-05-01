@@ -24,6 +24,24 @@
     <Filter Include="font">
       <UniqueIdentifier>{b33946b0-5a73-4252-9b2d-b9ac03fa6d66}</UniqueIdentifier>
     </Filter>
+    <Filter Include="x64">
+      <UniqueIdentifier>{3cc3334f-1273-486d-a734-4eb6ba3a5810}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="x64\Debug">
+      <UniqueIdentifier>{29b2b33a-76fe-4669-88cd-f94e1ae3ce5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="x64\Release">
+      <UniqueIdentifier>{be5790e9-b7af-42cf-a66c-74b035229c19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Win32">
+      <UniqueIdentifier>{785d3099-6398-4435-a3c3-c50f5be2ba38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Win32\Debug">
+      <UniqueIdentifier>{3dcb0bfc-fdb5-4720-84a7-214eb6d638bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Win32\Release">
+      <UniqueIdentifier>{349cc4a0-0335-4f0f-9aff-396b98e0a7c0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.c">
@@ -305,6 +323,54 @@
     </None>
     <None Include="libraries\x64\zlib1.dll">
       <Filter>libraries\x64</Filter>
+    </None>
+    <None Include="x64\Debug\libfreetype-6.dll">
+      <Filter>x64\Debug</Filter>
+    </None>
+    <None Include="x64\Debug\SDL2.dll">
+      <Filter>x64\Debug</Filter>
+    </None>
+    <None Include="x64\Debug\SDL2_ttf.dll">
+      <Filter>x64\Debug</Filter>
+    </None>
+    <None Include="x64\Debug\zlib1.dll">
+      <Filter>x64\Debug</Filter>
+    </None>
+    <None Include="x64\Release\libfreetype-6.dll">
+      <Filter>x64\Release</Filter>
+    </None>
+    <None Include="x64\Release\SDL2.dll">
+      <Filter>x64\Release</Filter>
+    </None>
+    <None Include="x64\Release\SDL2_ttf.dll">
+      <Filter>x64\Release</Filter>
+    </None>
+    <None Include="x64\Release\zlib1.dll">
+      <Filter>x64\Release</Filter>
+    </None>
+    <None Include="Win32\Debug\libfreetype-6.dll">
+      <Filter>Win32\Debug</Filter>
+    </None>
+    <None Include="Win32\Debug\SDL2.dll">
+      <Filter>Win32\Debug</Filter>
+    </None>
+    <None Include="Win32\Debug\SDL2_ttf.dll">
+      <Filter>Win32\Debug</Filter>
+    </None>
+    <None Include="Win32\Debug\zlib1.dll">
+      <Filter>Win32\Debug</Filter>
+    </None>
+    <None Include="Win32\Release\libfreetype-6.dll">
+      <Filter>Win32\Release</Filter>
+    </None>
+    <None Include="Win32\Release\SDL2.dll">
+      <Filter>Win32\Release</Filter>
+    </None>
+    <None Include="Win32\Release\SDL2_ttf.dll">
+      <Filter>Win32\Release</Filter>
+    </None>
+    <None Include="Win32\Release\zlib1.dll">
+      <Filter>Win32\Release</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

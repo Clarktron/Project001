@@ -1,5 +1,4 @@
 #include "input.h"
-
 #include "render.h"
 
 #include <SDL.h>
