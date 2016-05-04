@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-void menu_display(uint32_t menu_number);
+uint8_t menu_display();
 
 #endif

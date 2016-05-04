@@ -20,8 +20,8 @@ struct FONT
 
 struct FONT _font_list[NUM_FONTS] =
 {
-	{"font\\font.ttf", NULL, 30},
-	{"font\\font.ttf", NULL, 10}
+	{"font\\Consolas.ttf", NULL, 20},
+	{"font\\Consolas.ttf", NULL, 10}
 };
 
 SDL_Window *_window = NULL;
@@ -94,11 +94,20 @@ void render_rectangle(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uin
 	SDL_RenderFillRect(_renderer, &rect);
 }
 
-void render_draw_text(int32_t x, int32_t y, const char *text, uint32_t font_number, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+void render_draw_text(int32_t x, int32_t y, const char *text, uint32_t font_number, uint8_t r, uint8_t g, uint8_t b, uint8_t a, uint8_t x_alignment, uint8_t y_alignment, uint8_t quality)
 {
 	SDL_Color color = {r, g, b, a};
 	TEXTURE texture;
-	SDL_Surface *text_surface = TTF_RenderText_Solid(_font_list[font_number].font, text, color);
+	SDL_Surface *text_surface = NULL;
+	if (quality == QUALITY_BEST)
+	{
+		text_surface = TTF_RenderText_Blended(_font_list[font_number].font, text, color);
+	}
+	else
+	{
+		text_surface = TTF_RenderText_Solid(_font_list[font_number].font, text, color);
+	}
+
 	if (text_surface == NULL)
 	{
 		log_output("render: Could not create texture: %s\n", TTF_GetError());
@@ -115,8 +124,37 @@ void render_draw_text(int32_t x, int32_t y, const char *text, uint32_t font_numb
 	texture.w = text_surface->w;
 	texture.h = text_surface->h;
 	SDL_FreeSurface(text_surface);
+	
+	int32_t x_mod;
+	int32_t y_mod;
 
-	render_draw_texture(texture, x, y);
+	if (x_alignment == ALIGN_RIGHT)
+	{
+		x_mod = texture.w;
+	}
+	else if (x_alignment == ALIGN_CENTER)
+	{
+		x_mod = texture.w / 2;
+	}
+	else
+	{
+		x_mod = 0;
+	}
+
+	if (y_alignment == ALIGN_BOTTOM)
+	{
+		y_mod = texture.h;
+	}
+	else if (y_alignment == ALIGN_CENTER)
+	{
+		y_mod = texture.h / 2;
+	}
+	else
+	{
+		y_mod = 0;
+	}
+
+	render_draw_texture(texture, x - x_mod, y - y_mod);
 
 	render_delete_texture(texture);
 }

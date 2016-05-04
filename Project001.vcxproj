@@ -281,6 +281,7 @@
     <Library Include="libraries\x86\SDL2_ttf.lib" />
   </ItemGroup>
   <ItemGroup>
+    <Font Include="font\Consolas.ttf" />
     <Font Include="font\font.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

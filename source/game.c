@@ -13,6 +13,10 @@ void game_loop()
 	while (input_poll() == 0)
 	{
 		render_begin_frame();
+		if (!menu_display())
+		{
+			break;
+		}
 		render_end_frame();
 	}
 }

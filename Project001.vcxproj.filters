@@ -417,5 +417,8 @@
     <Font Include="font\font.ttf">
       <Filter>font</Filter>
     </Font>
+    <Font Include="font\Consolas.ttf">
+      <Filter>font</Filter>
+    </Font>
   </ItemGroup>
 </Project>
