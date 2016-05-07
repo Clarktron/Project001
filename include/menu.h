@@ -1,8 +1,10 @@
 #ifndef MENU_H
 #define MENU_H
 
+#include "game.h"
+
 #include <stdint.h>
 
-uint8_t menu_display();
+void menu_display(GAME_STATE *game);
 
 #endif

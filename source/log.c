@@ -1,15 +1,28 @@
 #include "log.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <time.h>
 
 FILE *_file = NULL;
 const char *_filename = "output.log";
 const char *_mode = "w";
+uint8_t _setup = 0;
+
+#ifdef PLATFORM_DEBUG
+#define log_output(fmt, ...) (_log_output(fmt, __VA_ARGS__))
+#else
+#define log_output(fmt, ...) (0)
+#endif
 
 int32_t log_setup()
 {
+	if (_setup != 0)
+	{
+		return _setup;
+	}
 	if (_file == NULL)
 	{
 		errno_t err = fopen_s(&_file, _filename, _mode);
@@ -22,6 +35,7 @@ int32_t log_setup()
 		{
 			return -3;
 		}
+		_setup = 1;
 		return 0;
 	}
 	return -1;
@@ -29,39 +43,38 @@ int32_t log_setup()
 
 int32_t log_teardown()
 {
+	if (_setup != 1)
+	{
+		return 1;
+	}
 	if (_file != NULL)
 	{
 		fclose(_file);
+		_setup = 0;
 		return 0;
 	}
 	return -1;
 }
 
-int32_t log_output(const char *format, ...)
+int32_t _log_output(const char *format, ...)
 {
 	int32_t result;
 	va_list args;
+	time_t t = time(NULL);
+	char *str = ctime(&t);
+	str[24] = '\0';
 	va_start(args, format);
-#ifdef PLATFORM_DEBUG
+	fprintf_s(stdout, "[%s] ", str);
 	result = vfprintf_s(stdout, format, args);
-#else
 	if (_file != NULL)
 	{
+		fprintf_s(_file, "[%s] ", str);
 		result = vfprintf_s(_file, format, args);
 	}
 	else
 	{
-		if (_file != NULL)
-		{
-			result = vfprintf_s(_file, format, args);
-		}
-		else
-		{
-			printf("log: file not open\n");
-		}
+		printf("log: file not open\n");
 	}
-#endif
 	va_end(args);
-
 	return result;
 }

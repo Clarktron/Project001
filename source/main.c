@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
 	}
 
 	system_setup();
+	
 	game_loop();
 	system_teardown();
 

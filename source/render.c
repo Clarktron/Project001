@@ -1,8 +1,8 @@
 #include "render.h"
-
 #include "system.h"
 #include "log.h"
 
+#include <stdint.h>
 #include <SDL.h>
 #include <SDL_ttf.h>
 
@@ -54,6 +54,16 @@ void render_setup()
 	{
 		_frame_tick = SDL_GetTicks();
 	}
+	log_output("render: Setup complete\n");
+}
+
+void render_teardown()
+{
+	SDL_DestroyRenderer(_renderer);
+	SDL_DestroyWindow(_window);
+	TTF_Quit();
+	SDL_Quit();
+	log_output("render: Teardown complete\n");
 }
 
 void render_line(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint8_t r, uint8_t g, uint8_t b)
@@ -190,12 +200,4 @@ void render_end_frame()
 		}
 		_frame_tick = SDL_GetTicks();
 	}
-}
-
-void render_teardown()
-{
-	SDL_DestroyRenderer(_renderer);
-	SDL_DestroyWindow(_window);
-	TTF_Quit();
-	SDL_Quit();
 }

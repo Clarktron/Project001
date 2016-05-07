@@ -2,7 +2,6 @@
 #define RENDER_H
 
 #include <stdint.h>
-
 #include <SDL.h>
 
 #define ALIGN_LEFT (0x00)

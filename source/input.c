@@ -1,12 +1,13 @@
 #include "input.h"
 #include "render.h"
 
+#include <stdint.h>
 #include <SDL.h>
 
-void(*_keyboard_cb)(SDL_Event) = NULL;
-void(*_mouse_motion_cb)(SDL_Event) = NULL;
-void(*_mouse_button_cb)(SDL_Event) = NULL;
-void(*_mouse_wheel_cb)(SDL_Event) = NULL;
+void(*_keyboard_cb)(SDL_KeyboardEvent) = NULL;
+void(*_mouse_motion_cb)(SDL_MouseMotionEvent) = NULL;
+void(*_mouse_button_cb)(SDL_MouseButtonEvent) = NULL;
+void(*_mouse_wheel_cb)(SDL_MouseWheelEvent) = NULL;
 uint8_t _enable_cb = 1;
 
 int32_t input_poll()
@@ -22,26 +23,26 @@ int32_t input_poll()
 			case SDL_KEYUP:
 				if (_keyboard_cb != NULL && _enable_cb)
 				{
-					_keyboard_cb(ev);
+					_keyboard_cb(ev.key);
 				}
 				break;
 			case SDL_MOUSEMOTION:
 				if (_mouse_motion_cb != NULL && _enable_cb)
 				{
-					_mouse_motion_cb(ev);
+					_mouse_motion_cb(ev.motion);
 				}
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
 				if (_mouse_button_cb != NULL && _enable_cb)
 				{
-					_mouse_button_cb(ev);
+					_mouse_button_cb(ev.button);
 				}
 				break;
 			case SDL_MOUSEWHEEL:
 				if (_mouse_wheel_cb != NULL && _enable_cb)
 				{
-					_mouse_wheel_cb(ev);
+					_mouse_wheel_cb(ev.wheel);
 				}
 				break;
 		}
@@ -49,7 +50,7 @@ int32_t input_poll()
 	return 0;
 }
 
-void input_register_keyboard_event_cb(void(*cb)(SDL_Event))
+void input_register_keyboard_event_cb(void(*cb)(SDL_KeyboardEvent))
 {
 	if (cb != NULL)
 	{
@@ -57,7 +58,7 @@ void input_register_keyboard_event_cb(void(*cb)(SDL_Event))
 	}
 }
 
-void input_register_mouse_motion_event_cb(void(*cb)(SDL_Event))
+void input_register_mouse_motion_event_cb(void(*cb)(SDL_MouseMotionEvent))
 {
 	if (cb != NULL)
 	{
@@ -65,7 +66,7 @@ void input_register_mouse_motion_event_cb(void(*cb)(SDL_Event))
 	}
 }
 
-void input_register_mouse_button_event_cb(void(*cb)(SDL_Event))
+void input_register_mouse_button_event_cb(void(*cb)(SDL_MouseButtonEvent))
 {
 	if (cb != NULL)
 	{
@@ -73,7 +74,7 @@ void input_register_mouse_button_event_cb(void(*cb)(SDL_Event))
 	}
 }
 
-void input_register_mouse_wheel_event_cb(void(*cb)(SDL_Event))
+void input_register_mouse_wheel_event_cb(void(*cb)(SDL_MouseWheelEvent))
 {
 	if (cb != NULL)
 	{
