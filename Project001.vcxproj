@@ -236,6 +236,7 @@
     <ClInclude Include="include\log.h" />
     <ClInclude Include="include\menu.h" />
     <ClInclude Include="include\render.h" />
+    <ClInclude Include="include\state.h" />
     <ClInclude Include="include\system.h" />
   </ItemGroup>
   <ItemGroup>
@@ -282,6 +283,10 @@
   </ItemGroup>
   <ItemGroup>
     <Font Include="font\Consolas.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resources\dirt.png" />
+    <Image Include="resources\grass.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

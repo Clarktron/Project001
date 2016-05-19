@@ -11,6 +11,14 @@
 
 #define NUM_FONTS (2)
 
+struct render
+{
+	SDL_Window *window;
+	SDL_Renderer *renderer;
+	uint8_t locked;
+	uint32_t frame_tick;
+};
+
 struct FONT
 {
 	const char *path;
@@ -24,64 +32,70 @@ struct FONT _font_list[NUM_FONTS] =
 	{"font\\Consolas.ttf", NULL, 10}
 };
 
-SDL_Window *_window = NULL;
-SDL_Renderer *_renderer = NULL;
-
 #define FPS (60)
-uint8_t _locked = 1;
-uint32_t _frame_tick = 0;
 
-void render_setup()
+RENDER_S *render_setup()
 {
+	RENDER_S *render;
 	uint32_t i;
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
-		return;
+		return NULL;
 	}
 	if (TTF_Init() != 0)
 	{
-		return;
+		return NULL;
 	}
-	_window = SDL_CreateWindow(PROGRAM_NAME, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH * SCALE_X, SCREEN_HEIGHT * SCALE_Y, SDL_WINDOW_ALLOW_HIGHDPI);
-	_renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED);
+	render = malloc(sizeof(RENDER_S));
+	if (render == NULL)
+	{
+		log_output("render: Insufficient memory\n");
+		return NULL;
+	}
+	render->window = SDL_CreateWindow(PROGRAM_NAME, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH * SCALE_X, SCREEN_HEIGHT * SCALE_Y, SDL_WINDOW_ALLOW_HIGHDPI);
+	render->renderer = SDL_CreateRenderer(render->window, -1, SDL_RENDERER_ACCELERATED);
 	for (i = 0; i < NUM_FONTS; ++i)
 	{
 		_font_list[i].font = TTF_OpenFont(_font_list[i].path, _font_list[i].size);
 	}
-	SDL_RenderSetScale(_renderer, SCALE_X, SCALE_Y);
+	SDL_RenderSetScale(render->renderer, SCALE_X, SCALE_Y);
 	
-	if (_locked)
+	if (render->locked)
 	{
-		_frame_tick = SDL_GetTicks();
+		render->frame_tick = SDL_GetTicks();
 	}
+
+	SDL_CaptureMouse(1);
 	log_output("render: Setup complete\n");
+	return render;
 }
 
-void render_teardown()
+void render_teardown(RENDER_S *render)
 {
-	SDL_DestroyRenderer(_renderer);
-	SDL_DestroyWindow(_window);
+	SDL_DestroyRenderer(render->renderer);
+	SDL_DestroyWindow(render->window);
 	TTF_Quit();
 	SDL_Quit();
+	free(render);
 	log_output("render: Teardown complete\n");
 }
 
-void render_line(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint8_t r, uint8_t g, uint8_t b)
+void render_line(RENDER_S *render, int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint8_t r, uint8_t g, uint8_t b)
 {
-	SDL_SetRenderDrawColor(_renderer, r, g, b, SDL_ALPHA_OPAQUE);
-	SDL_RenderDrawLine(_renderer, x1, y1, x2, y2);
+	SDL_SetRenderDrawColor(render->renderer, r, g, b, SDL_ALPHA_OPAQUE);
+	SDL_RenderDrawLine(render->renderer, x1, y1, x2, y2);
 }
 
-void render_circle(int32_t x, int32_t y, double radius, uint8_t r, uint8_t g, uint8_t b)
+void render_circle(RENDER_S *render, int32_t x, int32_t y, double radius, uint8_t r, uint8_t g, uint8_t b)
 {
 	uint64_t segments = (uint64_t)(sqrt(radius) * 2 + 4);
-	SDL_SetRenderDrawColor(_renderer, r, g, b, SDL_ALPHA_OPAQUE);
+	SDL_SetRenderDrawColor(render->renderer, r, g, b, SDL_ALPHA_OPAQUE);
 
 	double step = (2 * M_PI) / segments;
 
 	if (segments < 2)
 	{
-		SDL_RenderDrawPoint(_renderer, x, y);
+		SDL_RenderDrawPoint(render->renderer, x, y);
 	}
 	else
 	{
@@ -92,19 +106,19 @@ void render_circle(int32_t x, int32_t y, double radius, uint8_t r, uint8_t g, ui
 			int32_t x2 = (int32_t)(radius * cos((i + 1) * step) + x);
 			int32_t y2 = (int32_t)(radius * sin((i + 1) * step) + y);
 
-			SDL_RenderDrawLine(_renderer, x1, y1, x2, y2);
+			SDL_RenderDrawLine(render->renderer, x1, y1, x2, y2);
 		}
 	}
 }
 
-void render_rectangle(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+void render_rectangle(RENDER_S *render, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a, uint8_t filled)
 {
 	SDL_Rect rect = {x, y, w, h};
-	SDL_SetRenderDrawColor(_renderer, r, g, b, a);
-	SDL_RenderFillRect(_renderer, &rect);
+	SDL_SetRenderDrawColor(render->renderer, r, g, b, a);
+	SDL_RenderFillRect(render->renderer, &rect);
 }
 
-void render_draw_text(int32_t x, int32_t y, const char *text, uint32_t font_number, uint8_t r, uint8_t g, uint8_t b, uint8_t a, uint8_t x_alignment, uint8_t y_alignment, uint8_t quality)
+void render_draw_text(RENDER_S *render, int32_t x, int32_t y, const char *text, uint32_t font_number, uint8_t r, uint8_t g, uint8_t b, uint8_t a, uint8_t x_alignment, uint8_t y_alignment, uint8_t quality)
 {
 	SDL_Color color = {r, g, b, a};
 	TEXTURE texture;
@@ -123,7 +137,7 @@ void render_draw_text(int32_t x, int32_t y, const char *text, uint32_t font_numb
 		log_output("render: Could not create texture: %s\n", TTF_GetError());
 		return;
 	}
-	SDL_Texture *temp = SDL_CreateTextureFromSurface(_renderer, text_surface);
+	SDL_Texture *temp = SDL_CreateTextureFromSurface(render->renderer, text_surface);
 	if (temp == NULL)
 	{
 		log_output("render: Could not create texture from surface: %s\n", TTF_GetError());
@@ -164,17 +178,17 @@ void render_draw_text(int32_t x, int32_t y, const char *text, uint32_t font_numb
 		y_mod = 0;
 	}
 
-	render_draw_texture(texture, x - x_mod, y - y_mod);
+	render_draw_texture(render, texture, x - x_mod, y - y_mod);
 
 	render_delete_texture(texture);
 }
 
-void render_draw_texture(TEXTURE texture, int32_t x, int32_t y)
+void render_draw_texture(RENDER_S *render, TEXTURE texture, int32_t x, int32_t y)
 {
 	SDL_Rect src = {0, 0, texture.w, texture.h};
 	SDL_Rect dst = {x, y, texture.w, texture.h};
 
-	SDL_RenderCopy(_renderer, texture.texture, &src, &dst);
+	SDL_RenderCopy(render->renderer, texture.texture, &src, &dst);
 }
 
 void render_delete_texture(TEXTURE texture)
@@ -182,22 +196,22 @@ void render_delete_texture(TEXTURE texture)
 	SDL_DestroyTexture(texture.texture);
 }
 
-void render_begin_frame()
+void render_begin_frame(RENDER_S *render)
 {
-	SDL_SetRenderDrawColor(_renderer, 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE);
-	SDL_RenderClear(_renderer);
+	SDL_SetRenderDrawColor(render->renderer, 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE);
+	SDL_RenderClear(render->renderer);
 }
 
-void render_end_frame()
+void render_end_frame(RENDER_S *render)
 {
-	SDL_RenderPresent(_renderer);
-	if (_locked)
+	SDL_RenderPresent(render->renderer);
+	if (render->locked)
 	{
-		uint32_t elapsed_time = SDL_GetTicks() - _frame_tick;
+		uint32_t elapsed_time = SDL_GetTicks() - render->frame_tick;
 		if (elapsed_time < 1000.0 / FPS)
 		{
 			SDL_Delay((uint32_t)(1000.0 / FPS) - elapsed_time);
 		}
-		_frame_tick = SDL_GetTicks();
+		render->frame_tick = SDL_GetTicks();
 	}
 }

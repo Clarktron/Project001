@@ -11,12 +11,6 @@ const char *_filename = "output.log";
 const char *_mode = "w";
 uint8_t _setup = 0;
 
-#ifdef PLATFORM_DEBUG
-#define log_output(fmt, ...) (_log_output(fmt, __VA_ARGS__))
-#else
-#define log_output(fmt, ...) (0)
-#endif
-
 int32_t log_setup()
 {
 	if (_setup != 0)

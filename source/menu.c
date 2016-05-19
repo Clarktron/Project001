@@ -6,6 +6,7 @@
 #include "log.h"
 
 #include <stdint.h>
+#include <string.h>
 
 #define X_WIDTH (SCREEN_WIDTH / 3)
 #define Y_HEIGHT (SCREEN_HEIGHT / 8)
@@ -18,51 +19,88 @@
 #define BUTTON_B (0x7F)
 #define BUTTON_A (0xFF)
 
+#define BUTTON_DOWN_R (0x5F)
+#define BUTTON_DOWN_G (0x5F)
+#define BUTTON_DOWN_B (0x5F)
+
 #define FONT_R (0x00)
 #define FONT_G (0x00)
 #define FONT_B (0x00)
 #define FONT_A (0xFF)
 
-GAME_STATE _prev_state = STATE_EXIT;
-int32_t _click_x = 0;
-int32_t _click_y = 0;
-uint8_t _clicked = 0;
-
-void _menu_mouse_button_event_cb(SDL_MouseButtonEvent ev);
-void _menu_generic_button(GAME_STATE *state, GAME_STATE next_state, int32_t x, int32_t y, int32_t w, int32_t h, const char *text);
-
-void _menu_mouse_button_event_cb(SDL_MouseButtonEvent ev)
+struct menu
 {
-	if (ev.type == SDL_MOUSEBUTTONDOWN)
+	int32_t click_x;
+	int32_t click_y;
+	uint8_t clicked;
+	uint8_t registered;
+};
+
+void _menu_mouse_button_event_cb(SDL_MouseButtonEvent ev, void *ptr);
+void _menu_generic_button(MENU_S *menu, INPUT_S *input, RENDER_S *render, STATE *state, STATE next_state, int32_t x, int32_t y, int32_t w, int32_t h, const char *text);
+
+void _menu_mouse_button_event_cb(SDL_MouseButtonEvent ev, void *ptr)
+{
+	MENU_S *menu = (MENU_S *)ptr;
+	menu->click_x = ev.x;
+	menu->click_y = ev.y;
+	if (ev.type == SDL_MOUSEBUTTONUP)
 	{
-		_click_x = ev.x;
-		_click_y = ev.y;
-		_clicked = 1;
+		menu->clicked = 1;
+	}
+	else
+	{
+		menu->clicked = 2;
 	}
 }
 
-void _menu_generic_button(GAME_STATE *state, GAME_STATE next_state, int32_t x, int32_t y, int32_t w, int32_t h, const char *text)
+void _menu_generic_button(MENU_S *menu, INPUT_S *input, RENDER_S *render, STATE *state, STATE next_state, int32_t x, int32_t y, int32_t w, int32_t h, const char *text)
 {
-	render_rectangle(x, y, w, h, BUTTON_R, BUTTON_G, BUTTON_B, BUTTON_A);
-	render_draw_text(x + w / 2, y + h / 2, text, 0, FONT_R, FONT_G, FONT_B, FONT_A, ALIGN_CENTER, ALIGN_CENTER, QUALITY_BEST);
-	if (_clicked && _click_x >= x && _click_x < x + w && _click_y >= y && _click_y < y + h)
+	if (menu->clicked && menu->click_x >= x && menu->click_x < x + w && menu->click_y >= y && menu->click_y < y + h)
 	{
-		if (*state != next_state)
+		if (menu->clicked == 1)
 		{
-			input_unregister_mouse_button_event_cb();
-			log_output("menu: State change (%s->%s)\n", game_state_to_string(*state), game_state_to_string(next_state));
-			*state = next_state;
+			render_rectangle(render, x, y, w, h, BUTTON_R, BUTTON_G, BUTTON_B, BUTTON_A, FILLED);
+			if (*state != next_state)
+			{
+				input_unregister_mouse_button_event_cb(input);
+				menu->registered = 0;
+				log_output("menu: State change (%s->%s)\n", game_state_to_string(*state), game_state_to_string(next_state));
+				*state = next_state;
+			}
+			menu->clicked = 0;
 		}
-		_clicked = 0;
+		else if (menu->clicked == 2)
+		{
+			render_rectangle(render, x, y, w, h, BUTTON_DOWN_R, BUTTON_DOWN_G, BUTTON_DOWN_B, BUTTON_A, FILLED);
+		}
 	}
+	else
+	{
+		render_rectangle(render, x, y, w, h, BUTTON_R, BUTTON_G, BUTTON_B, BUTTON_A, FILLED);
+	}
+	render_draw_text(render, x + w / 2, y + h / 2, text, 0, FONT_R, FONT_G, FONT_B, FONT_A, ALIGN_CENTER, ALIGN_CENTER, QUALITY_BEST);
 }
 
-void menu_display(GAME_STATE *state)
+MENU_S *menu_setup()
 {
-	if (_prev_state != *state)
+	MENU_S *menu;
+	menu = malloc(sizeof(MENU_S));
+	memset(menu, 0, sizeof(MENU_S));
+	return menu;
+}
+
+void menu_teardown(MENU_S *menu)
+{
+	free(menu);
+}
+
+void menu_display(MENU_S *menu, RENDER_S *render, INPUT_S *input, STATE *state)
+{
+	if (!menu->registered)
 	{
-		input_register_mouse_button_event_cb(*_menu_mouse_button_event_cb);
-		_prev_state = *state;
+		input_register_mouse_button_event_cb(input, *_menu_mouse_button_event_cb, menu);
+		menu->registered = 1;
 	}
 	switch (*state)
 	{
@@ -71,24 +109,35 @@ void menu_display(GAME_STATE *state)
 				int32_t x_coord = X_OFFSET;
 				int32_t y_coord = Y_OFFSET;
 
-				_menu_generic_button(state, STATE_MENU_SINGLE_OPTIONS, x_coord, y_coord, X_WIDTH, Y_HEIGHT, "Single Player");
+				_menu_generic_button(menu, input, render, state, STATE_MENU_SINGLE_OPTIONS, x_coord, y_coord, X_WIDTH, Y_HEIGHT, "Single Player");
 				y_coord += Y_HEIGHT + Y_SEP;
-				_menu_generic_button(state, STATE_MENU_MULTI_OPTIONS, x_coord, y_coord, X_WIDTH, Y_HEIGHT, "Multi Player");
+				_menu_generic_button(menu, input, render, state, STATE_MENU_MULTI_OPTIONS, x_coord, y_coord, X_WIDTH, Y_HEIGHT, "Multi Player");
 				y_coord += Y_HEIGHT + Y_SEP;
-				_menu_generic_button(state, STATE_EXIT, x_coord, y_coord, X_WIDTH, Y_HEIGHT, "Exit");
+				_menu_generic_button(menu, input, render, state, STATE_EXIT, x_coord, y_coord, X_WIDTH, Y_HEIGHT, "Exit");
 			}
 			break;
-		case STATE_MENU_MULTI_OPTIONS:
 		case STATE_MENU_SINGLE_OPTIONS:
 			{
 				int32_t x_coord = X_OFFSET;
 				int32_t y_coord = Y_OFFSET;
 
-				_menu_generic_button(state, STATE_GAME_SINGLE, x_coord, y_coord, X_WIDTH, Y_HEIGHT, "Play");
+				_menu_generic_button(menu, input, render, state, STATE_GAME_SINGLE_INIT, x_coord, y_coord, X_WIDTH, Y_HEIGHT, "Play Singleplayer");
 				y_coord += Y_HEIGHT + Y_SEP;
 
 				y_coord += Y_HEIGHT + Y_SEP;
-				_menu_generic_button(state, STATE_MENU_MAIN, x_coord, y_coord, X_WIDTH, Y_HEIGHT, "Back");
+				_menu_generic_button(menu, input, render, state, STATE_MENU_MAIN, x_coord, y_coord, X_WIDTH, Y_HEIGHT, "Back");
+			}
+			break;
+		case STATE_MENU_MULTI_OPTIONS:
+			{
+				int32_t x_coord = X_OFFSET;
+				int32_t y_coord = Y_OFFSET;
+
+				_menu_generic_button(menu, input, render, state, STATE_GAME_MULTI_INIT, x_coord, y_coord, X_WIDTH, Y_HEIGHT, "Play Multiplayer");
+				y_coord += Y_HEIGHT + Y_SEP;
+
+				y_coord += Y_HEIGHT + Y_SEP;
+				_menu_generic_button(menu, input, render, state, STATE_MENU_MAIN, x_coord, y_coord, X_WIDTH, Y_HEIGHT, "Back");
 			}
 			break;
 	}

@@ -42,6 +42,9 @@
     <Filter Include="Win32\Release">
       <UniqueIdentifier>{349cc4a0-0335-4f0f-9aff-396b98e0a7c0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="resources">
+      <UniqueIdentifier>{ab82e623-3972-4af9-9abc-267c25ab694c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.c">
@@ -298,6 +301,9 @@
     <ClInclude Include="include\menu.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\state.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="libraries\x86\libfreetype-6.dll">
@@ -417,5 +423,13 @@
     <Font Include="font\Consolas.ttf">
       <Filter>font</Filter>
     </Font>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resources\dirt.png">
+      <Filter>resources</Filter>
+    </Image>
+    <Image Include="resources\grass.png">
+      <Filter>resources</Filter>
+    </Image>
   </ItemGroup>
 </Project>
