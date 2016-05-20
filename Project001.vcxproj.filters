@@ -378,6 +378,12 @@
     <None Include="Win32\Release\zlib1.dll">
       <Filter>Win32\Release</Filter>
     </None>
+    <None Include="resources\0000.pmap">
+      <Filter>resources</Filter>
+    </None>
+    <None Include="resources\0001.pmap">
+      <Filter>resources</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="libraries\x86\LICENSE.freetype.txt">

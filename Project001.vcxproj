@@ -98,6 +98,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -110,6 +111,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -248,6 +250,8 @@
     <None Include="libraries\x86\SDL2.dll" />
     <None Include="libraries\x86\SDL2_ttf.dll" />
     <None Include="libraries\x86\zlib1.dll" />
+    <None Include="resources\0000.pmap" />
+    <None Include="resources\0001.pmap" />
     <None Include="Win32\Debug\libfreetype-6.dll" />
     <None Include="Win32\Debug\SDL2.dll" />
     <None Include="Win32\Debug\SDL2_ttf.dll" />

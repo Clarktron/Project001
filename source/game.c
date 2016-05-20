@@ -12,10 +12,29 @@
 
 #define NUM_UNITS (100)
 
-#define CORNER_LEFT (0x01)
-#define CORNER_UP (0x02)
-#define CORNER_RIGHT (0x04)
-#define CORNER_DOWN (0x08)
+#define CORNER_FLAT (0x00)
+#define CORNER_L (0x01)
+#define CORNER_U (0x04)
+#define CORNER_R (0x10)
+#define CORNER_D (0x40)
+#define CORNER_L2 (0x02)
+#define CORNER_U2 (0x08)
+#define CORNER_R2 (0x20)
+#define CORNER_D2 (0x80)
+#define CORNER_UR (CORNER_U | CORNER_R)
+#define CORNER_LU (CORNER_L | CORNER_U)
+#define CORNER_LD (CORNER_L | CORNER_D)
+#define CORNER_RD (CORNER_R | CORNER_D)
+#define CORNER_LR (CORNER_L | CORNER_R)
+#define CORNER_UD (CORNER_U | CORNER_D)
+#define CORNER_URD (CORNER_U | CORNER_R | CORNER_D)
+#define CORNER_LRD (CORNER_L | CORNER_R | CORNER_D)
+#define CORNER_LUD (CORNER_L | CORNER_U | CORNER_D)
+#define CORNER_LUR (CORNER_L | CORNER_U | CORNER_R)
+#define CORNER_UR2D (CORNER_U | CORNER_R2 | CORNER_D)
+#define CORNER_LRD2 (CORNER_L | CORNER_R | CORNER_D2)
+#define CORNER_L2UD (CORNER_L2 | CORNER_U | CORNER_D)
+#define CORNER_LU2R (CORNER_L | CORNER_U2 | CORNER_R)
 
 #define TILE_WIDTH (40)
 #define TILE_HEIGHT (20)
@@ -23,6 +42,9 @@
 
 #define SCREEN_SPEED_X (10)
 #define SCREEN_SPEED_Y (5)
+
+#define MAP_FILE_VERSION (0)
+#define MAP_NAME_LEN (260)
 
 typedef enum unit_type
 {
@@ -120,6 +142,7 @@ void _game_create_map_blank(GAME *game, uint64_t width, uint64_t height);
 void _game_draw_map(GAME *game, RENDER_S *render);
 void _game_draw_tile(TILE tile, RENDER_S *render, int32_t x, int32_t y, uint64_t index);
 void _game_scroll(GAME *game);
+uint8_t _game_load_map(GAME *game, uint32_t number);
 
 void game_loop(RENDER_S *render, MENU_S *menu)
 {
@@ -192,7 +215,7 @@ char *game_state_to_string(STATE state)
 
 void _game_mouse_button_event_cb(SDL_MouseButtonEvent ev, void *ptr)
 {
-
+	GAME *game = (GAME *)ptr;
 }
 
 void _game_mouse_motion_event_cb(SDL_MouseMotionEvent ev, void *ptr)
@@ -206,14 +229,14 @@ void _game_init(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input)
 {
 	if (*state == STATE_GAME_SINGLE_INIT)
 	{
-		input_register_mouse_button_event_cb(input, *_game_mouse_button_event_cb, NULL);
+		input_register_mouse_button_event_cb(input, *_game_mouse_button_event_cb, game);
 		input_register_mouse_motion_event_cb(input, *_game_mouse_motion_event_cb, game);
 		*state = STATE_GAME_SINGLE_PLAY;
 		log_output("game: State change (%s->%s)\n", game_state_to_string(STATE_GAME_SINGLE_INIT), game_state_to_string(*state));
 	}
 	else if (*state == STATE_GAME_MULTI_INIT)
 	{
-		input_register_mouse_button_event_cb(input, *_game_mouse_button_event_cb, NULL);
+		input_register_mouse_button_event_cb(input, *_game_mouse_button_event_cb, game);
 		input_register_mouse_motion_event_cb(input, *_game_mouse_motion_event_cb, game);
 		*state = STATE_GAME_MULTI_PLAY;
 		log_output("game: State change (%s->%s)\n", game_state_to_string(STATE_GAME_MULTI_INIT), game_state_to_string(*state));
@@ -221,15 +244,20 @@ void _game_init(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input)
 	else
 	{
 		log_output("game: Invalid gameplay state (%s)\n", game_state_to_string(*state));
+		return;
 	}
 
 	memset(game, 0, sizeof(GAME));
-	game->units = malloc(sizeof(UNIT) * NUM_UNITS);
-	memset(game->units, 0, sizeof(UNIT) * NUM_UNITS);
-	log_output("game: unit size: %i, list size: %i\n", sizeof(UNIT), sizeof(UNIT) * NUM_UNITS);
-	_game_create_map_blank(game, 10, 10);
-	game->x_offset = 0;
-	game->y_offset = 0;
+	//game->units = malloc(sizeof(UNIT) * NUM_UNITS);
+	//memset(game->units, 0, sizeof(UNIT) * NUM_UNITS);
+	//log_output("game: unit size: %i, list size: %i\n", sizeof(UNIT), sizeof(UNIT) * NUM_UNITS);
+	//_game_create_map_blank(game, 10, 10);
+	if (_game_load_map(game, 1) != 0)
+	{
+		log_output("game: Failed to load map\n");
+		*state = STATE_MENU_MAIN;
+		return;
+	}
 }
 
 void _game_play(GAME *game, RENDER_S *render, STATE *state)
@@ -257,6 +285,7 @@ void _game_post(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input)
 	else
 	{
 		log_output("game: Invalid gameplay state (%s)\n", game_state_to_string(*state));
+		return;
 	}
 
 	free(game->units);
@@ -283,7 +312,7 @@ void _game_create_map_blank(GAME *game, uint64_t width, uint64_t height)
 			uint64_t index = i + j * width;
 			map[index].type = TYPE_GRASS;
 			map[index].base.elevation = 2;
-			map[index].base.corners = 0;
+			map[index].base.corners = CORNER_FLAT;
 		}
 	}
 }
@@ -318,7 +347,7 @@ void _game_draw_map(GAME *game, RENDER_S *render)
 			uint64_t index = i + j * game->map_width;
 			int32_t x = i * (TILE_WIDTH / 2) + TILE_WIDTH / 2 + j * (TILE_WIDTH / 2);
 			int32_t y = j * (TILE_HEIGHT / 2) - i * (TILE_HEIGHT / 2) + TILE_HEIGHT / 2 * game->map_width;
-			_game_draw_tile(game->map[index], render, x - game->x_offset, y - game->y_offset, index);
+			_game_draw_tile(game->map[index], render, x - game->x_offset, y - game->y_offset, game->map[index].base.elevation);
 		}
 	}
 }
@@ -329,45 +358,50 @@ void _game_draw_tile(TILE tile, RENDER_S *render, int32_t x, int32_t y, uint64_t
 
 	uint8_t corners = tile.base.corners;
 
+	uint32_t i;
+
 	x_left = x - TILE_WIDTH / 2;
 	x_right = x + TILE_WIDTH / 2;
 	x_up = x;
 	x_down = x;
 
-	if (corners & CORNER_LEFT)
+	y_left = y;
+	y_up = y - TILE_HEIGHT / 2;
+	y_right = y;
+	y_down = y + TILE_HEIGHT / 2;
+
+	if (corners & CORNER_L)
 	{
-		y_left = y - TILE_DEPTH;
+		y_left -= TILE_DEPTH;
 	}
-	else
+	if (corners & CORNER_U)
 	{
-		y_left = y;
+		y_up -= TILE_DEPTH;
+	}
+	if (corners & CORNER_R)
+	{
+		y_right -= TILE_DEPTH;
+	}
+	if (corners & CORNER_D)
+	{
+		y_down -= TILE_DEPTH;
 	}
 
-	if (corners & CORNER_RIGHT)
+	if (corners & CORNER_L2)
 	{
-		y_right = y - TILE_DEPTH;
+		y_left -= TILE_DEPTH * 2;
 	}
-	else
+	if (corners & CORNER_U2)
 	{
-		y_right = y;
+		y_up -= TILE_DEPTH * 2;
 	}
-
-	if (corners & CORNER_UP)
+	if (corners & CORNER_R2)
 	{
-		y_up = y - TILE_HEIGHT / 2 - TILE_DEPTH;
+		y_right -= TILE_DEPTH * 2;
 	}
-	else
+	if (corners & CORNER_D2)
 	{
-		y_up = y - TILE_HEIGHT / 2;
-	}
-
-	if (corners & CORNER_DOWN)
-	{
-		y_down = y + TILE_HEIGHT / 2 - TILE_DEPTH;
-	}
-	else
-	{
-		y_down = y + TILE_HEIGHT / 2;
+		y_down -= TILE_DEPTH * 2;
 	}
 
 	y_left -= tile.base.elevation * TILE_DEPTH;
@@ -377,6 +411,31 @@ void _game_draw_tile(TILE tile, RENDER_S *render, int32_t x, int32_t y, uint64_t
 
 	uint8_t r = 0, g = 0, b = 0;
 
+	// Draw the dirt foundation, bottom up
+	r = 0x8B;
+	g = 0x76;
+	b = 0x55;
+
+	for (i = 0; i < tile.base.elevation; i++)
+	{
+		int32_t x_l, x_d, x_r, y_t, y_b, y_db;
+		x_l = x - TILE_WIDTH / 2;
+		x_r = x + TILE_WIDTH / 2;
+		x_d = x;
+		y_t = y - i * TILE_DEPTH - TILE_DEPTH;
+		y_b = y - i * TILE_DEPTH;
+		y_db = y - i * TILE_DEPTH + TILE_HEIGHT / 2;
+		render_line(render, x_l, y_t, x_l, y_b, r, g, b);
+		render_line(render, x_r, y_t, x_r, y_b, r, g, b);
+		render_line(render, x_l, y_b, x_d, y_db, r, g, b);
+		render_line(render, x_r, y_b, x_d, y_db, r, g, b);
+	}
+	// ---
+
+	// Draw the dirt wedges for the foundation
+	// ---
+
+	// Draw the tile surface
 	if (tile.type == TYPE_GRASS)
 	{
 		r = 0x2C;
@@ -394,9 +453,15 @@ void _game_draw_tile(TILE tile, RENDER_S *render, int32_t x, int32_t y, uint64_t
 	render_line(render, x_up, y_up, x_right, y_right, r, g, b);
 	render_line(render, x_right, y_right, x_down, y_down, r, g, b);
 	render_line(render, x_down, y_down, x_left, y_left, r, g, b);
+	// ---
+
+	// Draw the tile elevation
+	/*
 	char str[10];
 	sprintf(str, "%llu", index);
 	render_draw_text(render, x, y - tile.base.elevation * TILE_DEPTH, str, 1, r, g, b, 0xFF, ALIGN_CENTER, ALIGN_CENTER, QUALITY_BEST);
+	*/
+	// ---
 }
 
 void _game_scroll(GAME *game)
@@ -419,4 +484,83 @@ void _game_scroll(GAME *game)
 	}
 
 	// need to clamp the window to the border of the map
+}
+
+uint8_t _game_load_map(GAME *game, uint32_t number)
+{
+	char str[MAP_NAME_LEN];
+	sprintf_s(str, sizeof(str), "resources\\%04lu.pmap", number);
+	FILE *file;
+	uint32_t version;
+	uint64_t width = 0, height = 0;
+	uint32_t i, j;
+
+	file = fopen(str, "r");
+	if (file == NULL)
+	{
+		log_output("game: Could not open file %s, likely does not exist\n", str);
+		return 1;
+	}
+
+	if (fscanf(file, "%lu", &version) < 1)
+	{
+		log_output("game: Could not read verion number. feof: %i ferror: %i\n", feof(file), ferror(file));
+		return 1;
+	}
+	if (version == 0)
+	{
+		if (fscanf(file, "%llu %llu", &width, &height) < 2)
+		{
+			log_output("game: Could not read width & height from file. feof: %i ferror: %i\n", feof(file), ferror(file));
+			return 1;
+		}
+		game->map = malloc(sizeof(TILE) * width * height);
+		memset(game->map, 0, sizeof(TILE) * width * height);
+		game->map_width = width;
+		game->map_height = height;
+		for (j = 0; j < height; ++j)
+		{
+			for (i = 0; i < width; ++i)
+			{
+				if (fscanf(file, "%lu", &(game->map[i + j * width].base.elevation)) < 1)
+				{
+					log_output("game: Could not read data from file. feof: %i ferror: %i\n", feof(file), ferror(file));
+					return 1;
+				}
+			}
+		}
+	}
+	else if (version == 1)
+	{
+		if (fscanf(file, "%llu %llu", &width, &height) < 2)
+		{
+			log_output("game: Could not read width & height from file. feof: %i ferror: %i\n", feof(file), ferror(file));
+			return 1;
+		}
+		if ((game->map = malloc(sizeof(TILE) * width * height)) == NULL)
+		{
+			log_output("game: Insufficient memory\n");
+			fclose(file);
+			return 1;
+		}
+
+		memset(game->map, 0, sizeof(TILE) * width * height);
+		game->map_width = width;
+		game->map_height = height;
+		for (j = 0; j < height; ++j)
+		{
+			for (i = 0; i < width; ++i)
+			{
+				if (fscanf(file, "%lu%lu%x,", &(game->map[i + j * width].base.type), &(game->map[i + j * width].base.elevation), &(game->map[i + j * width].base.corners)) < 3)
+				{
+					log_output("game: Could not read data from file. feof: %i ferror: %i\n", feof(file), ferror(file));
+					return 1;
+				}
+			}
+		}
+	}
+
+	fclose(file);
+
+	return 0;
 }
