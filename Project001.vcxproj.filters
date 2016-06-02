@@ -304,32 +304,11 @@
     <ClInclude Include="include\state.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="dependencies\SDL_image.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="libraries\x86\libfreetype-6.dll">
-      <Filter>libraries\x86</Filter>
-    </None>
-    <None Include="libraries\x86\SDL2.dll">
-      <Filter>libraries\x86</Filter>
-    </None>
-    <None Include="libraries\x86\SDL2_ttf.dll">
-      <Filter>libraries\x86</Filter>
-    </None>
-    <None Include="libraries\x86\zlib1.dll">
-      <Filter>libraries\x86</Filter>
-    </None>
-    <None Include="libraries\x64\libfreetype-6.dll">
-      <Filter>libraries\x64</Filter>
-    </None>
-    <None Include="libraries\x64\SDL2.dll">
-      <Filter>libraries\x64</Filter>
-    </None>
-    <None Include="libraries\x64\SDL2_ttf.dll">
-      <Filter>libraries\x64</Filter>
-    </None>
-    <None Include="libraries\x64\zlib1.dll">
-      <Filter>libraries\x64</Filter>
-    </None>
     <None Include="x64\Debug\libfreetype-6.dll">
       <Filter>x64\Debug</Filter>
     </None>
@@ -384,20 +363,66 @@
     <None Include="resources\0001.pmap">
       <Filter>resources</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="libraries\x86\LICENSE.freetype.txt">
-      <Filter>libraries\x86</Filter>
-    </Text>
-    <Text Include="libraries\x86\LICENSE.zlib.txt">
-      <Filter>libraries\x86</Filter>
-    </Text>
-    <Text Include="libraries\x64\LICENSE.freetype.txt">
-      <Filter>libraries\x64</Filter>
-    </Text>
-    <Text Include="libraries\x64\LICENSE.zlib.txt">
-      <Filter>libraries\x64</Filter>
-    </Text>
+    <None Include="Win32\Debug\libjpeg-9.dll">
+      <Filter>Win32\Debug</Filter>
+    </None>
+    <None Include="Win32\Debug\libpng16-16.dll">
+      <Filter>Win32\Debug</Filter>
+    </None>
+    <None Include="Win32\Debug\libtiff-5.dll">
+      <Filter>Win32\Debug</Filter>
+    </None>
+    <None Include="Win32\Debug\libwebp-4.dll">
+      <Filter>Win32\Debug</Filter>
+    </None>
+    <None Include="Win32\Debug\SDL2_image.dll">
+      <Filter>Win32\Debug</Filter>
+    </None>
+    <None Include="Win32\Release\libjpeg-9.dll">
+      <Filter>Win32\Release</Filter>
+    </None>
+    <None Include="Win32\Release\libpng16-16.dll">
+      <Filter>Win32\Release</Filter>
+    </None>
+    <None Include="Win32\Release\libtiff-5.dll">
+      <Filter>Win32\Release</Filter>
+    </None>
+    <None Include="Win32\Release\libwebp-4.dll">
+      <Filter>Win32\Release</Filter>
+    </None>
+    <None Include="Win32\Release\SDL2_image.dll">
+      <Filter>Win32\Release</Filter>
+    </None>
+    <None Include="x64\Debug\libjpeg-9.dll">
+      <Filter>x64\Debug</Filter>
+    </None>
+    <None Include="x64\Debug\libpng16-16.dll">
+      <Filter>x64\Debug</Filter>
+    </None>
+    <None Include="x64\Debug\libtiff-5.dll">
+      <Filter>x64\Debug</Filter>
+    </None>
+    <None Include="x64\Debug\libwebp-4.dll">
+      <Filter>x64\Debug</Filter>
+    </None>
+    <None Include="x64\Debug\SDL2_image.dll">
+      <Filter>x64\Debug</Filter>
+    </None>
+    <None Include="x64\Release\libjpeg-9.dll">
+      <Filter>x64\Release</Filter>
+    </None>
+    <None Include="x64\Release\libpng16-16.dll">
+      <Filter>x64\Release</Filter>
+    </None>
+    <None Include="x64\Release\libtiff-5.dll">
+      <Filter>x64\Release</Filter>
+    </None>
+    <None Include="x64\Release\libwebp-4.dll">
+      <Filter>x64\Release</Filter>
+    </None>
+    <None Include="x64\Release\SDL2_image.dll">
+      <Filter>x64\Release</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libraries\x86\SDL2.lib">
@@ -423,6 +448,12 @@
     </Library>
     <Library Include="libraries\x64\SDL2test.lib">
       <Filter>libraries\x64</Filter>
+    </Library>
+    <Library Include="libraries\x64\SDL2_image.lib">
+      <Filter>libraries\x64</Filter>
+    </Library>
+    <Library Include="libraries\x86\SDL2_image.lib">
+      <Filter>libraries\x86</Filter>
     </Library>
   </ItemGroup>
   <ItemGroup>

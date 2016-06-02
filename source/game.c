@@ -36,10 +36,6 @@
 #define CORNER_L2UD (CORNER_L2 | CORNER_U | CORNER_D)
 #define CORNER_LU2R (CORNER_L | CORNER_U2 | CORNER_R)
 
-#define TILE_WIDTH (40)
-#define TILE_HEIGHT (20)
-#define TILE_DEPTH (5)
-
 #define SCREEN_SPEED_X (10)
 #define SCREEN_SPEED_Y (5)
 
@@ -140,6 +136,7 @@ void _game_play(GAME *game, RENDER_S *render, STATE *state);
 void _game_post(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input);
 void _game_create_map_blank(GAME *game, uint64_t width, uint64_t height);
 void _game_draw_map(GAME *game, RENDER_S *render);
+uint8_t _game_corners_to_index(uint8_t corners);
 void _game_draw_tile(TILE tile, RENDER_S *render, int32_t x, int32_t y, uint64_t index);
 void _game_scroll(GAME *game);
 uint8_t _game_load_map(GAME *game, uint32_t number);
@@ -345,122 +342,78 @@ void _game_draw_map(GAME *game, RENDER_S *render)
 				j = l - game->map_width + k + 1;
 			}
 			uint64_t index = i + j * game->map_width;
-			int32_t x = i * (TILE_WIDTH / 2) + TILE_WIDTH / 2 + j * (TILE_WIDTH / 2);
-			int32_t y = j * (TILE_HEIGHT / 2) - i * (TILE_HEIGHT / 2) + TILE_HEIGHT / 2 * game->map_width;
+			int32_t x = (int32_t)(i * (TILE_WIDTH / 2) + TILE_WIDTH / 2 + j * (TILE_WIDTH / 2));
+			int32_t y = (int32_t)(j * (TILE_HEIGHT / 2) - i * (TILE_HEIGHT / 2) + TILE_HEIGHT / 2 * game->map_width);
 			_game_draw_tile(game->map[index], render, x - game->x_offset, y - game->y_offset, game->map[index].base.elevation);
 		}
 	}
 }
 
+uint8_t _game_corners_to_index(uint8_t corners)
+{
+	switch (corners)
+	{
+		case 0:
+			return 0;
+		case CORNER_L:
+			return 1;
+		case CORNER_R:
+			return 2;
+		case CORNER_U:
+			return 3;
+		case CORNER_D:
+			return 4;
+		case CORNER_LU:
+			return 5;
+		case CORNER_UR:
+			return 6;
+		case CORNER_RD:
+			return 7;
+		case CORNER_LD:
+			return 8;
+		case CORNER_LRD:
+			return 9;
+		case CORNER_LUD:
+			return 10;
+		case CORNER_LUR:
+			return 11;
+		case CORNER_URD:
+			return 12;
+		case CORNER_UR2D:
+			return 13;
+		case CORNER_LU2R:
+			return 14;
+		case CORNER_L2UD:
+			return 15;
+		case CORNER_LRD2:
+			return 16;
+		default:
+			return (uint8_t)(-1);
+	}
+	return 0;
+}
+
 void _game_draw_tile(TILE tile, RENDER_S *render, int32_t x, int32_t y, uint64_t index)
 {
-	int32_t x_left, x_up, x_right, x_down, y_left, y_up, y_right, y_down;
-
-	uint8_t corners = tile.base.corners;
-
 	uint32_t i;
 
-	x_left = x - TILE_WIDTH / 2;
-	x_right = x + TILE_WIDTH / 2;
-	x_up = x;
-	x_down = x;
-
-	y_left = y;
-	y_up = y - TILE_HEIGHT / 2;
-	y_right = y;
-	y_down = y + TILE_HEIGHT / 2;
-
-	if (corners & CORNER_L)
-	{
-		y_left -= TILE_DEPTH;
-	}
-	if (corners & CORNER_U)
-	{
-		y_up -= TILE_DEPTH;
-	}
-	if (corners & CORNER_R)
-	{
-		y_right -= TILE_DEPTH;
-	}
-	if (corners & CORNER_D)
-	{
-		y_down -= TILE_DEPTH;
-	}
-
-	if (corners & CORNER_L2)
-	{
-		y_left -= TILE_DEPTH * 2;
-	}
-	if (corners & CORNER_U2)
-	{
-		y_up -= TILE_DEPTH * 2;
-	}
-	if (corners & CORNER_R2)
-	{
-		y_right -= TILE_DEPTH * 2;
-	}
-	if (corners & CORNER_D2)
-	{
-		y_down -= TILE_DEPTH * 2;
-	}
-
-	y_left -= tile.base.elevation * TILE_DEPTH;
-	y_right -= tile.base.elevation * TILE_DEPTH;
-	y_up -= tile.base.elevation * TILE_DEPTH;
-	y_down -= tile.base.elevation * TILE_DEPTH;
-
-	uint8_t r = 0, g = 0, b = 0;
-
 	// Draw the dirt foundation, bottom up
-	r = 0x8B;
-	g = 0x76;
-	b = 0x55;
-
 	for (i = 0; i < tile.base.elevation; i++)
 	{
-		int32_t x_l, x_d, x_r, y_t, y_b, y_db;
-		x_l = x - TILE_WIDTH / 2;
-		x_r = x + TILE_WIDTH / 2;
-		x_d = x;
-		y_t = y - i * TILE_DEPTH - TILE_DEPTH;
-		y_b = y - i * TILE_DEPTH;
-		y_db = y - i * TILE_DEPTH + TILE_HEIGHT / 2;
-		render_line(render, x_l, y_t, x_l, y_b, r, g, b);
-		render_line(render, x_r, y_t, x_r, y_b, r, g, b);
-		render_line(render, x_l, y_b, x_d, y_db, r, g, b);
-		render_line(render, x_r, y_b, x_d, y_db, r, g, b);
+		render_draw_slope(render, 17, x, y - i * TILE_DEPTH);
 	}
-	// ---
-
-	// Draw the dirt wedges for the foundation
 	// ---
 
 	// Draw the tile surface
-	if (tile.type == TYPE_GRASS)
-	{
-		r = 0x2C;
-		g = 0x78;
-		b = 0x26;
-	}
-	else if (tile.type == TYPE_DIRT)
-	{
-		r = 0x8B;
-		g = 0x76;
-		b = 0x55;
-	}
-
-	render_line(render, x_left, y_left, x_up, y_up, r, g, b);
-	render_line(render, x_up, y_up, x_right, y_right, r, g, b);
-	render_line(render, x_right, y_right, x_down, y_down, r, g, b);
-	render_line(render, x_down, y_down, x_left, y_left, r, g, b);
+	render_draw_slope(render, _game_corners_to_index(tile.base.corners), x, y - tile.base.elevation * TILE_DEPTH);
 	// ---
 
-	// Draw the tile elevation
+	// Draw the tile number (elevation, draw index, etc)
 	/*
 	char str[10];
 	sprintf(str, "%llu", index);
-	render_draw_text(render, x, y - tile.base.elevation * TILE_DEPTH, str, 1, r, g, b, 0xFF, ALIGN_CENTER, ALIGN_CENTER, QUALITY_BEST);
-	*/
+	render_draw_text(render, x, y - tile.base.elevation * TILE_DEPTH, str, 1, 0x56, 0xB8, 0xFF, 0xFF, ALIGN_CENTER, ALIGN_CENTER, QUALITY_BEST);
+	//*/
 	// ---
 }
 
@@ -551,7 +504,7 @@ uint8_t _game_load_map(GAME *game, uint32_t number)
 		{
 			for (i = 0; i < width; ++i)
 			{
-				if (fscanf(file, "%lu%lu%x,", &(game->map[i + j * width].base.type), &(game->map[i + j * width].base.elevation), &(game->map[i + j * width].base.corners)) < 3)
+				if (fscanf(file, "%lu%lu%hhx,", &(game->map[i + j * width].base.type), &(game->map[i + j * width].base.elevation), &(game->map[i + j * width].base.corners)) < 3)
 				{
 					log_output("game: Could not read data from file. feof: %i ferror: %i\n", feof(file), ferror(file));
 					return 1;

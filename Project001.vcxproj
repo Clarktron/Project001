@@ -182,6 +182,7 @@
     <ClInclude Include="dependencies\SDL_gesture.h" />
     <ClInclude Include="dependencies\SDL_haptic.h" />
     <ClInclude Include="dependencies\SDL_hints.h" />
+    <ClInclude Include="dependencies\SDL_image.h" />
     <ClInclude Include="dependencies\SDL_joystick.h" />
     <ClInclude Include="dependencies\SDL_keyboard.h" />
     <ClInclude Include="dependencies\SDL_keycode.h" />
@@ -242,47 +243,55 @@
     <ClInclude Include="include\system.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="libraries\x64\libfreetype-6.dll" />
-    <None Include="libraries\x64\SDL2.dll" />
-    <None Include="libraries\x64\SDL2_ttf.dll" />
-    <None Include="libraries\x64\zlib1.dll" />
-    <None Include="libraries\x86\libfreetype-6.dll" />
-    <None Include="libraries\x86\SDL2.dll" />
-    <None Include="libraries\x86\SDL2_ttf.dll" />
-    <None Include="libraries\x86\zlib1.dll" />
     <None Include="resources\0000.pmap" />
     <None Include="resources\0001.pmap" />
     <None Include="Win32\Debug\libfreetype-6.dll" />
+    <None Include="Win32\Debug\libjpeg-9.dll" />
+    <None Include="Win32\Debug\libpng16-16.dll" />
+    <None Include="Win32\Debug\libtiff-5.dll" />
+    <None Include="Win32\Debug\libwebp-4.dll" />
     <None Include="Win32\Debug\SDL2.dll" />
+    <None Include="Win32\Debug\SDL2_image.dll" />
     <None Include="Win32\Debug\SDL2_ttf.dll" />
     <None Include="Win32\Debug\zlib1.dll" />
     <None Include="Win32\Release\libfreetype-6.dll" />
+    <None Include="Win32\Release\libjpeg-9.dll" />
+    <None Include="Win32\Release\libpng16-16.dll" />
+    <None Include="Win32\Release\libtiff-5.dll" />
+    <None Include="Win32\Release\libwebp-4.dll" />
     <None Include="Win32\Release\SDL2.dll" />
+    <None Include="Win32\Release\SDL2_image.dll" />
     <None Include="Win32\Release\SDL2_ttf.dll" />
     <None Include="Win32\Release\zlib1.dll" />
     <None Include="x64\Debug\libfreetype-6.dll" />
+    <None Include="x64\Debug\libjpeg-9.dll" />
+    <None Include="x64\Debug\libpng16-16.dll" />
+    <None Include="x64\Debug\libtiff-5.dll" />
+    <None Include="x64\Debug\libwebp-4.dll" />
     <None Include="x64\Debug\SDL2.dll" />
+    <None Include="x64\Debug\SDL2_image.dll" />
     <None Include="x64\Debug\SDL2_ttf.dll" />
     <None Include="x64\Debug\zlib1.dll" />
     <None Include="x64\Release\libfreetype-6.dll" />
+    <None Include="x64\Release\libjpeg-9.dll" />
+    <None Include="x64\Release\libpng16-16.dll" />
+    <None Include="x64\Release\libtiff-5.dll" />
+    <None Include="x64\Release\libwebp-4.dll" />
     <None Include="x64\Release\SDL2.dll" />
+    <None Include="x64\Release\SDL2_image.dll" />
     <None Include="x64\Release\SDL2_ttf.dll" />
     <None Include="x64\Release\zlib1.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="libraries\x64\LICENSE.freetype.txt" />
-    <Text Include="libraries\x64\LICENSE.zlib.txt" />
-    <Text Include="libraries\x86\LICENSE.freetype.txt" />
-    <Text Include="libraries\x86\LICENSE.zlib.txt" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="libraries\x64\SDL2.lib" />
     <Library Include="libraries\x64\SDL2main.lib" />
     <Library Include="libraries\x64\SDL2test.lib" />
+    <Library Include="libraries\x64\SDL2_image.lib" />
     <Library Include="libraries\x64\SDL2_ttf.lib" />
     <Library Include="libraries\x86\SDL2.lib" />
     <Library Include="libraries\x86\SDL2main.lib" />
     <Library Include="libraries\x86\SDL2test.lib" />
+    <Library Include="libraries\x86\SDL2_image.lib" />
     <Library Include="libraries\x86\SDL2_ttf.lib" />
   </ItemGroup>
   <ItemGroup>
