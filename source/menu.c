@@ -42,8 +42,8 @@ void _menu_generic_button(MENU_S *menu, INPUT_S *input, RENDER_S *render, STATE 
 void _menu_mouse_button_event_cb(SDL_MouseButtonEvent ev, void *ptr)
 {
 	MENU_S *menu = (MENU_S *)ptr;
-	menu->click_x = ev.x;
-	menu->click_y = ev.y;
+	menu->click_x = ev.x / SCALE_X;
+	menu->click_y = ev.y / SCALE_Y;
 	if (ev.type == SDL_MOUSEBUTTONUP)
 	{
 		menu->clicked = 1;

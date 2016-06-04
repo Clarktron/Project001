@@ -7,10 +7,9 @@
 #include <SDL_ttf.h>
 #include <SDL_image.h>
 
-#define SCALE_X (1)
-#define SCALE_Y (1)
-
 #define NUM_FONTS (2)
+
+#define FPS (60)
 
 typedef struct font
 {
@@ -26,10 +25,9 @@ struct render
 	uint8_t locked;
 	uint32_t frame_tick;
 	SDL_Texture *slopes;
+	SDL_Texture *units;
 	FONT font_list[NUM_FONTS];
 };
-
-#define FPS (60)
 
 RENDER_S *render_setup()
 {
@@ -104,6 +102,20 @@ RENDER_S *render_setup()
 		return NULL;
 	}
 
+	render->units = IMG_LoadTexture(render->renderer, "resources\\units.png");
+	if (render->units == NULL)
+	{
+		log_output("render: Failed to load units\n");
+		SDL_DestroyTexture(render->slopes);
+		SDL_DestroyWindow(render->window);
+		SDL_DestroyRenderer(render->renderer);
+		IMG_Quit();
+		TTF_Quit();
+		SDL_Quit();
+		free(render);
+		return NULL;
+	}
+
 	for (i = 0; i < NUM_FONTS; ++i)
 	{
 		render->font_list[i].font = TTF_OpenFont(render->font_list[i].path, render->font_list[i].size);
@@ -122,6 +134,8 @@ RENDER_S *render_setup()
 
 void render_teardown(RENDER_S *render)
 {
+	SDL_DestroyTexture(render->slopes);
+	SDL_DestroyTexture(render->units);
 	SDL_DestroyRenderer(render->renderer);
 	SDL_DestroyWindow(render->window);
 	IMG_Quit();
@@ -166,7 +180,14 @@ void render_rectangle(RENDER_S *render, int32_t x, int32_t y, int32_t w, int32_t
 {
 	SDL_Rect rect = {x, y, w, h};
 	SDL_SetRenderDrawColor(render->renderer, r, g, b, a);
-	SDL_RenderFillRect(render->renderer, &rect);
+	if (filled == FILLED)
+	{
+		SDL_RenderFillRect(render->renderer, &rect);
+	}
+	else
+	{
+		SDL_RenderDrawRect(render->renderer, &rect);
+	}
 }
 
 void render_draw_text(RENDER_S *render, int32_t x, int32_t y, const char *text, uint32_t font_number, uint8_t r, uint8_t g, uint8_t b, uint8_t a, uint8_t x_alignment, uint8_t y_alignment, uint8_t quality)
@@ -243,10 +264,22 @@ void render_draw_slope(RENDER_S *render, uint8_t index, int32_t x, int32_t y)
 	SDL_Rect src = {0, 0, w, h};
 	SDL_Rect dst = {x - TILE_WIDTH / 2, y - TILE_HEIGHT / 2 - TILE_DEPTH * 2, w, h};
 
-	src.x = (index % 4) * 40;
-	src.y = (index / 4) * 30;
+	src.x = (index % 4) * w;
+	src.y = (index / 4) * h;
 
 	SDL_RenderCopy(render->renderer, render->slopes, &src, &dst);
+}
+
+void render_draw_unit(RENDER_S *render, uint8_t index, int32_t x, int32_t y)
+{
+	int32_t w = UNIT_WIDTH, h = UNIT_HEIGHT;
+	SDL_Rect src = {0, 0, w, h};
+	SDL_Rect dst = {x - UNIT_WIDTH / 2, y - UNIT_HEIGHT / 2, w, h};
+
+	src.x = (index % 4) * w;
+	src.y = (index / 4) * h;
+
+	SDL_RenderCopy(render->renderer, render->units, &src, &dst);
 }
 
 void render_begin_frame(RENDER_S *render)

@@ -245,6 +245,7 @@
   <ItemGroup>
     <None Include="resources\0000.pmap" />
     <None Include="resources\0001.pmap" />
+    <None Include="resources\0002.pmap" />
     <None Include="Win32\Debug\libfreetype-6.dll" />
     <None Include="Win32\Debug\libjpeg-9.dll" />
     <None Include="Win32\Debug\libpng16-16.dll" />
@@ -300,6 +301,7 @@
   <ItemGroup>
     <Image Include="resources\dirt.png" />
     <Image Include="resources\grass.png" />
+    <Image Include="resources\green_slopes.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

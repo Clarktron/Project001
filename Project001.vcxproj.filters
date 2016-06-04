@@ -423,6 +423,9 @@
     <None Include="x64\Release\SDL2_image.dll">
       <Filter>x64\Release</Filter>
     </None>
+    <None Include="resources\0002.pmap">
+      <Filter>resources</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libraries\x86\SDL2.lib">
@@ -466,6 +469,9 @@
       <Filter>resources</Filter>
     </Image>
     <Image Include="resources\grass.png">
+      <Filter>resources</Filter>
+    </Image>
+    <Image Include="resources\green_slopes.png">
       <Filter>resources</Filter>
     </Image>
   </ItemGroup>
