@@ -43,6 +43,9 @@
 #define MAP_FILE_VERSION (0)
 #define MAP_NAME_LEN (260)
 
+// ----------------------------------------------------------------------------
+// Unit info
+
 typedef enum unit_type
 {
 	TYPE_TANK,
@@ -106,6 +109,9 @@ typedef union unit
 	UNIT_GUNNER gunner;
 } UNIT;
 
+// ----------------------------------------------------------------------------
+// Tile info
+
 typedef enum tile_type
 {
 	TYPE_GRASS,
@@ -117,7 +123,8 @@ typedef struct tile_base
 {
 	TILE_TYPE type;
 	uint32_t elevation;
-	uint8_t corners; // 0000 | Left Up Right Down
+	uint8_t corners; // 0000 | LURD
+	uint8_t num_units;
 } TILE_BASE;
 
 typedef union tile
@@ -125,6 +132,8 @@ typedef union tile
 	TILE_TYPE type;
 	TILE_BASE base;
 } TILE;
+
+// ----------------------------------------------------------------------------
 
 typedef struct unit_list UNIT_LIST;
 
@@ -183,6 +192,154 @@ uint8_t _game_load_map(GAME *game, uint32_t number);
 UNIT_BASE _game_create_unit_base(double x, double y, double max_speed, double speed, double accel, double size, uint64_t max_health, uint64_t health, uint64_t attack, uint64_t defense);
 UNIT_GUNNER _game_create_unit_gunner(UNIT_BASE base, uint64_t bullet_speed, uint64_t accuracy);
 void _game_insert_unit(GAME *game, UNIT unit);
+
+void _game_msort_units(GAME *game);
+UNIT_LIST *_game_msort_unit_list(UNIT_LIST *head);
+UNIT_LIST *_game_msort_unit_split(UNIT_LIST *head);
+UNIT_LIST *_game_msort_unit_merge(UNIT_LIST *first, UNIT_LIST *second);
+
+// merge sort the list of units, so that they appear in drawing order
+void _game_msort_units(GAME *game)
+{
+	UNIT_LIST *new_head = NULL, *temp = NULL;
+	if (game->num_units == 0 || game->num_units == 1)
+	{
+		// nothing to see here, we are done, units already sorted
+		//return;
+	}
+
+	new_head = _game_msort_unit_list(game->unit_list);
+	if (new_head == NULL)
+	{
+		// we failed to sort somehow, bail out
+		return;
+	}
+
+	game->unit_list = new_head;
+	temp = new_head;
+	
+	while (new_head != NULL)
+	{
+		temp = new_head;
+		new_head = new_head->next;
+	}
+
+	game->unit_list_end = temp;
+}
+
+UNIT_LIST *_game_msort_unit_list(UNIT_LIST *head)
+{
+	if (head == NULL || head->next == NULL)
+	{
+		return head;
+	}
+
+	UNIT_LIST *new_list = _game_msort_unit_split(head);
+
+	head = _game_msort_unit_list(head);
+	new_list = _game_msort_unit_list(new_list);
+
+	return _game_msort_unit_merge(head, new_list);
+}
+
+UNIT_LIST *_game_msort_unit_split(UNIT_LIST *head)
+{
+	UNIT_LIST *first = head;
+	UNIT_LIST *second = head;
+
+	while (first->next != NULL && first->next->next != NULL)
+	{
+		first = first->next->next;
+		second = second->next;
+	}
+
+	UNIT_LIST *temp = second->next;
+	second->next = NULL;
+	temp->prev = NULL;
+	return temp;
+}
+
+UNIT_LIST *_game_msort_unit_merge(UNIT_LIST *first, UNIT_LIST *second)
+{
+	int32_t ax, ay, bx, by;
+	double afx, afy, bfx, bfy;
+
+	if (first == NULL)
+	{
+		return second;
+	}
+	if (second == NULL)
+	{
+		return first;
+	}
+
+	//sorting criteria
+	ax = (int32_t)first->unit.base.x;
+	ay = (int32_t)first->unit.base.y;
+
+	bx = (int32_t)second->unit.base.x;
+	by = (int32_t)second->unit.base.y;
+
+	// first criteria: which "tile y" is less (render order / topwards)
+	if (-ax + ay < -bx + by)
+	{
+		first->next = _game_msort_unit_merge(first->next, second);
+		first->next->prev = first;
+		first->prev = NULL;
+		return first;
+	}
+	if (-ax + ay > -bx + by)
+	{
+		second->next = _game_msort_unit_merge(first, second->next);
+		second->next->prev = second;
+		second->prev = NULL;
+		return second;
+	}
+
+	// second criteria: which "tile x" is less (leftwards)
+	if (ax < bx)
+	{
+		first->next = _game_msort_unit_merge(first->next, second);
+		first->next->prev = first;
+		first->prev = NULL;
+		return first;
+	}
+	if (ax > bx)
+	{
+		second->next = _game_msort_unit_merge(first, second->next);
+		second->next->prev = second;
+		second->prev = NULL;
+		return second;
+	}
+
+	// third criteria: which "screen y" is less (topwards)
+	afx = first->unit.base.x;
+	afy = first->unit.base.y;
+
+	bfx = second->unit.base.x;
+	bfy = second->unit.base.y;
+
+	if (-afx + afy < -bfx + bfy)
+	{
+		first->next = _game_msort_unit_merge(first->next, second);
+		first->next->prev = first;
+		first->prev = NULL;
+		return first;
+	}
+	if (-afx + afy > -bfx + bfy)
+	{
+		second->next = _game_msort_unit_merge(first, second->next);
+		second->next->prev = second;
+		second->prev = NULL;
+		return second;
+	}
+
+	// default to this when all else fails
+	first->next = _game_msort_unit_merge(first->next, second);
+	first->next->prev = first;
+	first->prev = NULL;
+	return first;
+}
 
 void game_loop(RENDER_S *render, MENU_S *menu)
 {
@@ -321,9 +478,9 @@ void _game_init(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input)
 	memset(game, 0, sizeof(GAME));
 
 
-	/*
-	game->map_height = 20;
-	game->map_width = 20;
+	//*
+	game->map_height = 50;
+	game->map_width = 50;
 
 	game->map = malloc(sizeof(TILE) * game->map_width * game->map_height);
 	memset(game->map, 0, sizeof(TILE) * game->map_width * game->map_height);
@@ -335,6 +492,7 @@ void _game_init(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input)
 			game->map[index].type = 0;
 			game->map[index].base.elevation = system_rand() % 3;
 			game->map[index].base.corners = 0;
+			game->map[index].base.num_units = 0;
 			if (system_rand() % 2 == 0)
 			{
 				game->map[index].base.corners |= (system_rand() % 2 == 0) ? (system_rand() % 2 == 0) ? CORNER_L : CORNER_R : (system_rand() % 2 == 0) ? CORNER_U : CORNER_D;
@@ -356,7 +514,7 @@ void _game_init(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input)
 	}
 	//*/
 
-	_game_create_map_blank(game, 20, 20);
+	//_game_create_map_blank(game, 10, 10);
 
 	game->x_offset = (int32_t)(game->map_width * (TILE_WIDTH / 2) - (SCREEN_WIDTH / 2));
 	game->y_offset = -1 * (SCREEN_HEIGHT / 2);
@@ -365,16 +523,16 @@ void _game_init(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input)
 	SDL_GetMouseState(&(game->mouse.cur_x), &(game->mouse.cur_y));
 
 	//*
-	for (j = 0; j < 3; ++j)
-	{
-		for (i = 0; i < 3; ++i)
+	//for (j = 0; j < 3; ++j)
+	//{
+		for (i = 0; i < 15000; ++i)
 		{
 			UNIT unit;
-			unit.base = _game_create_unit_base(i / 2.0, j / 2.0, 1, 0, 0.1, 5, 100, 100, 1, 1);
+			unit.base = _game_create_unit_base((system_rand() % (game->map_width * 10)) / 10.0, (system_rand() % (game->map_height * 10)) / 10.0, 1, 0, 0.1, 5, 100, 100, 1, 1);
 			unit.gunner = _game_create_unit_gunner(unit.base, 1, 100);
 			_game_insert_unit(game, unit);
 		}
-	}
+	//}
 	//*/
 }
 
@@ -383,9 +541,10 @@ void _game_play(GAME *game, RENDER_S *render, STATE *state)
 	_game_update_mouse(game);
 	_game_scroll(game);
 
+	_game_msort_units(game);
 
 	_game_draw_map(game, render);
-	_game_draw_units(game, render);
+	//_game_draw_units(game, render);
 	_game_draw_mouse(game, render);
 
 	if (game->quit)
@@ -453,7 +612,7 @@ void _game_create_map_blank(GAME *game, uint64_t width, uint64_t height)
 
 void _game_draw_map(GAME *game, RENDER_S *render)
 {
-	uint64_t i, j, k, l;
+	uint64_t i, j, k, l, m;
 
 	uint64_t max;
 	if (game->map_height == 0 || game->map_width == 0)
@@ -468,6 +627,8 @@ void _game_draw_map(GAME *game, RENDER_S *render)
 	{
 		max = game->map_height;
 	}
+	uint32_t count = 0;
+	UNIT_LIST *top = game->unit_list;
 	for (l = 0; l < game->map_height + game->map_width - 1; ++l)
 	{
 		for (k = 0; k < max && k < l + 1 && k < game->map_height + game->map_width - l - 1; k++)
@@ -486,6 +647,30 @@ void _game_draw_map(GAME *game, RENDER_S *render)
 			int32_t x = (int32_t)(i * (TILE_WIDTH / 2) + TILE_WIDTH / 2 + j * (TILE_WIDTH / 2));
 			int32_t y = (int32_t)(j * (TILE_HEIGHT / 2) - i * (TILE_HEIGHT / 2));
 			_game_draw_tile(game->map[index], render, x - game->x_offset, y - game->y_offset, game->map[index].base.elevation);
+			for (m = 0; m < game->map[index].base.num_units; ++m)
+			{
+				if (top == NULL)
+				{
+					break;
+				}
+				double x = top->unit.base.x;
+				double y = top->unit.base.y;
+
+				int32_t x_coord, y_coord;
+				_game_unit_coords_to_screen_coords(game, x, y, &x_coord, &y_coord);
+
+				render_draw_unit(render, 0, x_coord, y_coord);
+				if (top->unit.base.selected)
+				{
+					render_draw_unit(render, 1, x_coord, y_coord);
+				}
+				/*
+				char str[10];
+				sprintf(str, "%llu", count++);
+				render_draw_text(render, x_coord, y_coord, str, 1, 0x56, 0xB8, 0xFF, 0xFF, ALIGN_CENTER, ALIGN_TOP, QUALITY_BEST);
+				//*/
+				top = top->next;
+			}
 		}
 	}
 }
@@ -493,6 +678,7 @@ void _game_draw_map(GAME *game, RENDER_S *render)
 void _game_draw_units(GAME *game, RENDER_S *render)
 {
 	UNIT_LIST *unit_list = game->unit_list;
+	uint32_t index = 0;
 
 	while (unit_list != NULL)
 	{
@@ -503,6 +689,9 @@ void _game_draw_units(GAME *game, RENDER_S *render)
 		_game_unit_coords_to_screen_coords(game, x, y, &x_coord, &y_coord);
 
 		render_draw_unit(render, 0, x_coord, y_coord);
+		char str[10];
+		sprintf(str, "%llu", index++);
+		render_draw_text(render, x_coord, y_coord, str, 1, 0x56, 0xB8, 0xFF, 0xFF, ALIGN_CENTER, ALIGN_TOP, QUALITY_BEST);
 
 		unit_list = unit_list->next;
 	}
@@ -814,11 +1003,11 @@ void _game_insert_unit(GAME *game, UNIT new_unit)
 		}
 		else
 		{
+			log_output("game: Failed to use cached unit list ending, parsing through instead");
 			while (unit_list->next != NULL)
 			{
 				unit_list = unit_list->next;
 			}
-			log_output("game: Failed to use cached unit list ending, parsing through instead");
 		}
 		unit_list->next = malloc(sizeof(UNIT_LIST));
 		unit_list->next->next = NULL;
@@ -826,4 +1015,9 @@ void _game_insert_unit(GAME *game, UNIT new_unit)
 		unit_list->next->unit = new_unit;
 		game->unit_list_end = unit_list->next;
 	}
+
+	int32_t x, y;
+	x = (int32_t)new_unit.base.x;
+	y = (int32_t)new_unit.base.y;
+	game->map[x + y * game->map_width].base.num_units += 1;
 }

@@ -122,6 +122,7 @@ RENDER_S *render_setup()
 	}
 	SDL_RenderSetScale(render->renderer, SCALE_X, SCALE_Y);
 	
+	render->locked = 1;
 	if (render->locked)
 	{
 		render->frame_tick = SDL_GetTicks();
@@ -288,6 +289,8 @@ void render_begin_frame(RENDER_S *render)
 	SDL_RenderClear(render->renderer);
 }
 
+uint32_t time = 0;
+
 void render_end_frame(RENDER_S *render)
 {
 	SDL_RenderPresent(render->renderer);
@@ -296,7 +299,7 @@ void render_end_frame(RENDER_S *render)
 		uint32_t elapsed_time = SDL_GetTicks() - render->frame_tick;
 		if (elapsed_time < 1000.0 / FPS)
 		{
-			SDL_Delay((uint32_t)(1000.0 / FPS) - elapsed_time);
+			SDL_Delay((uint32_t)((1000.0 / FPS) - elapsed_time));
 		}
 		render->frame_tick = SDL_GetTicks();
 	}
