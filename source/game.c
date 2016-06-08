@@ -193,153 +193,9 @@ UNIT_BASE _game_create_unit_base(double x, double y, double max_speed, double sp
 UNIT_GUNNER _game_create_unit_gunner(UNIT_BASE base, uint64_t bullet_speed, uint64_t accuracy);
 void _game_insert_unit(GAME *game, UNIT unit);
 
-void _game_msort_units(GAME *game);
-UNIT_LIST *_game_msort_unit_list(UNIT_LIST *head);
-UNIT_LIST *_game_msort_unit_split(UNIT_LIST *head);
+void _game_msort_unit_list(GAME *game);
+UNIT_LIST *_game_msort_unit_compare(UNIT_LIST *first, UNIT_LIST *second);
 UNIT_LIST *_game_msort_unit_merge(UNIT_LIST *first, UNIT_LIST *second);
-
-// merge sort the list of units, so that they appear in drawing order
-void _game_msort_units(GAME *game)
-{
-	UNIT_LIST *new_head = NULL, *temp = NULL;
-	if (game->num_units == 0 || game->num_units == 1)
-	{
-		// nothing to see here, we are done, units already sorted
-		//return;
-	}
-
-	new_head = _game_msort_unit_list(game->unit_list);
-	if (new_head == NULL)
-	{
-		// we failed to sort somehow, bail out
-		return;
-	}
-
-	game->unit_list = new_head;
-	temp = new_head;
-	
-	while (new_head != NULL)
-	{
-		temp = new_head;
-		new_head = new_head->next;
-	}
-
-	game->unit_list_end = temp;
-}
-
-UNIT_LIST *_game_msort_unit_list(UNIT_LIST *head)
-{
-	if (head == NULL || head->next == NULL)
-	{
-		return head;
-	}
-
-	UNIT_LIST *new_list = _game_msort_unit_split(head);
-
-	head = _game_msort_unit_list(head);
-	new_list = _game_msort_unit_list(new_list);
-
-	return _game_msort_unit_merge(head, new_list);
-}
-
-UNIT_LIST *_game_msort_unit_split(UNIT_LIST *head)
-{
-	UNIT_LIST *first = head;
-	UNIT_LIST *second = head;
-
-	while (first->next != NULL && first->next->next != NULL)
-	{
-		first = first->next->next;
-		second = second->next;
-	}
-
-	UNIT_LIST *temp = second->next;
-	second->next = NULL;
-	temp->prev = NULL;
-	return temp;
-}
-
-UNIT_LIST *_game_msort_unit_merge(UNIT_LIST *first, UNIT_LIST *second)
-{
-	int32_t ax, ay, bx, by;
-	double afx, afy, bfx, bfy;
-
-	if (first == NULL)
-	{
-		return second;
-	}
-	if (second == NULL)
-	{
-		return first;
-	}
-
-	//sorting criteria
-	ax = (int32_t)first->unit.base.x;
-	ay = (int32_t)first->unit.base.y;
-
-	bx = (int32_t)second->unit.base.x;
-	by = (int32_t)second->unit.base.y;
-
-	// first criteria: which "tile y" is less (render order / topwards)
-	if (-ax + ay < -bx + by)
-	{
-		first->next = _game_msort_unit_merge(first->next, second);
-		first->next->prev = first;
-		first->prev = NULL;
-		return first;
-	}
-	if (-ax + ay > -bx + by)
-	{
-		second->next = _game_msort_unit_merge(first, second->next);
-		second->next->prev = second;
-		second->prev = NULL;
-		return second;
-	}
-
-	// second criteria: which "tile x" is less (leftwards)
-	if (ax < bx)
-	{
-		first->next = _game_msort_unit_merge(first->next, second);
-		first->next->prev = first;
-		first->prev = NULL;
-		return first;
-	}
-	if (ax > bx)
-	{
-		second->next = _game_msort_unit_merge(first, second->next);
-		second->next->prev = second;
-		second->prev = NULL;
-		return second;
-	}
-
-	// third criteria: which "screen y" is less (topwards)
-	afx = first->unit.base.x;
-	afy = first->unit.base.y;
-
-	bfx = second->unit.base.x;
-	bfy = second->unit.base.y;
-
-	if (-afx + afy < -bfx + bfy)
-	{
-		first->next = _game_msort_unit_merge(first->next, second);
-		first->next->prev = first;
-		first->prev = NULL;
-		return first;
-	}
-	if (-afx + afy > -bfx + bfy)
-	{
-		second->next = _game_msort_unit_merge(first, second->next);
-		second->next->prev = second;
-		second->prev = NULL;
-		return second;
-	}
-
-	// default to this when all else fails
-	first->next = _game_msort_unit_merge(first->next, second);
-	first->next->prev = first;
-	first->prev = NULL;
-	return first;
-}
 
 void game_loop(RENDER_S *render, MENU_S *menu)
 {
@@ -478,9 +334,9 @@ void _game_init(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input)
 	memset(game, 0, sizeof(GAME));
 
 
-	//*
-	game->map_height = 50;
-	game->map_width = 50;
+	//* random map generation
+	game->map_height = 10;
+	game->map_width = 10;
 
 	game->map = malloc(sizeof(TILE) * game->map_width * game->map_height);
 	memset(game->map, 0, sizeof(TILE) * game->map_width * game->map_height);
@@ -488,7 +344,7 @@ void _game_init(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input)
 	{
 		for (i = 0; i < game->map_width; ++i)
 		{
-			uint32_t index = i + j * game->map_width;
+			uint64_t index = i + j * game->map_width;
 			game->map[index].type = 0;
 			game->map[index].base.elevation = system_rand() % 3;
 			game->map[index].base.corners = 0;
@@ -505,7 +361,7 @@ void _game_init(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input)
 	}
 	//*/
 
-	/*
+	/* load map from file
 	if (_game_load_map(game, 1) != 0)
 	{
 		log_output("game: Failed to load map\n");
@@ -514,6 +370,7 @@ void _game_init(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input)
 	}
 	//*/
 
+	// create blank map
 	//_game_create_map_blank(game, 10, 10);
 
 	game->x_offset = (int32_t)(game->map_width * (TILE_WIDTH / 2) - (SCREEN_WIDTH / 2));
@@ -523,16 +380,13 @@ void _game_init(GAME *game, RENDER_S *render, STATE *state, INPUT_S *input)
 	SDL_GetMouseState(&(game->mouse.cur_x), &(game->mouse.cur_y));
 
 	//*
-	//for (j = 0; j < 3; ++j)
-	//{
-		for (i = 0; i < 15000; ++i)
-		{
-			UNIT unit;
-			unit.base = _game_create_unit_base((system_rand() % (game->map_width * 10)) / 10.0, (system_rand() % (game->map_height * 10)) / 10.0, 1, 0, 0.1, 5, 100, 100, 1, 1);
-			unit.gunner = _game_create_unit_gunner(unit.base, 1, 100);
-			_game_insert_unit(game, unit);
-		}
-	//}
+	for (i = 0; i < 100; ++i)
+	{
+		UNIT unit;
+		unit.base = _game_create_unit_base((system_rand() % (game->map_width * 10)) / 10.0, (system_rand() % (game->map_height * 10)) / 10.0, 1, 0, 0.1, 5, 100, 100, 1, 1);
+		unit.gunner = _game_create_unit_gunner(unit.base, 1, 100);
+		_game_insert_unit(game, unit);
+	}
 	//*/
 }
 
@@ -541,10 +395,9 @@ void _game_play(GAME *game, RENDER_S *render, STATE *state)
 	_game_update_mouse(game);
 	_game_scroll(game);
 
-	_game_msort_units(game);
+	_game_msort_unit_list(game);
 
 	_game_draw_map(game, render);
-	//_game_draw_units(game, render);
 	_game_draw_mouse(game, render);
 
 	if (game->quit)
@@ -690,7 +543,7 @@ void _game_draw_units(GAME *game, RENDER_S *render)
 
 		render_draw_unit(render, 0, x_coord, y_coord);
 		char str[10];
-		sprintf(str, "%llu", index++);
+		sprintf(str, "%lu", index++);
 		render_draw_text(render, x_coord, y_coord, str, 1, 0x56, 0xB8, 0xFF, 0xFF, ALIGN_CENTER, ALIGN_TOP, QUALITY_BEST);
 
 		unit_list = unit_list->next;
@@ -1020,4 +873,228 @@ void _game_insert_unit(GAME *game, UNIT new_unit)
 	x = (int32_t)new_unit.base.x;
 	y = (int32_t)new_unit.base.y;
 	game->map[x + y * game->map_width].base.num_units += 1;
+	game->num_units++;
+}
+
+// merge sort the list of units, so that they appear in drawing order
+void _game_msort_unit_list(GAME *game)
+{
+	if (game->num_units == 0 || game->num_units == 1)
+	{
+		// nothing to see here, we are done, units already sorted
+		return;
+	}
+
+	if (game->unit_list == NULL || game->unit_list->next == NULL)
+	{
+		// nothing to see here, we are done, units already sorted
+		return;
+	}
+
+	UNIT_LIST *new_head = game->unit_list, *temp = NULL;
+	UNIT_LIST *list[32];
+	memset(list, 0, sizeof(UNIT_LIST *) * 32);
+	UNIT_LIST *next;
+	uint32_t i;
+
+	while (new_head != NULL)
+	{
+		next = new_head->next;
+		new_head->next = NULL;
+		for (i = 0; (i < 32) && (list[i] != NULL); ++i)
+		{
+			new_head = _game_msort_unit_merge(list[i], new_head);
+			list[i] = NULL;
+		}
+		if (i == 32)
+		{
+			--i;
+		}
+		list[i] = new_head;
+		new_head = next;
+	}
+
+	new_head = NULL;
+	for (i = 0; i < 32; ++i)
+	{
+		new_head = _game_msort_unit_merge(list[i], new_head);
+	}
+
+	game->unit_list = new_head;
+	temp = new_head;
+
+	while (new_head != NULL)
+	{
+		temp = new_head;
+		new_head = new_head->next;
+	}
+
+	game->unit_list_end = temp;
+}
+
+UNIT_LIST *_game_msort_unit_merge(UNIT_LIST *first, UNIT_LIST *second)
+{
+	UNIT_LIST *result = NULL;
+	UNIT_LIST *result_end = NULL;
+	UNIT_LIST *first_follow = first, *second_follow = second;
+
+	while (first_follow != NULL && second_follow != NULL)
+	{
+		UNIT_LIST *temp = _game_msort_unit_compare(first_follow, second_follow);
+		if (temp == NULL)
+		{
+			break;
+		}
+
+		if (temp == first_follow)
+		{
+			UNIT_LIST *next = first_follow->next;
+			if (result == NULL)
+			{
+				result = first_follow;
+				first_follow->prev = NULL;
+				first_follow->next = NULL;
+				result_end = first_follow;
+			}
+			else
+			{
+				result_end->next = first_follow;
+				first_follow->prev = result_end;
+				first_follow->next = NULL;
+
+				result_end = first_follow;
+			}
+
+			first_follow = next;
+		}
+		else
+		{
+			UNIT_LIST *next = second_follow->next;
+			if (result == NULL)
+			{
+				result = second_follow;
+				second_follow->prev = NULL;
+				second_follow->next = NULL;
+				result_end = second_follow;
+			}
+			else
+			{
+				result_end->next = second_follow;
+				second_follow->prev = result_end;
+				second_follow->next = NULL;
+
+				result_end = second_follow;
+			}
+
+			second_follow = next;
+		}
+	}
+
+	// either first or second may have content left, empty them
+	while (first_follow != NULL)
+	{
+		UNIT_LIST *next = first_follow->next;
+		if (result == NULL)
+		{
+			result = first_follow;
+			first_follow->prev = NULL;
+			first_follow->next = NULL;
+			result_end = first_follow;
+		}
+		else
+		{
+			result_end->next = first_follow;
+			first_follow->prev = result_end;
+			first_follow->next = NULL;
+
+			result_end = first_follow;
+		}
+
+		first_follow = next;
+	}
+
+	while (second_follow != NULL)
+	{
+		UNIT_LIST *next = second_follow->next;
+		if (result == NULL)
+		{
+			result = second_follow;
+			second_follow->prev = NULL;
+			second_follow->next = NULL;
+			result_end = second_follow;
+		}
+		else
+		{
+			result_end->next = second_follow;
+			second_follow->prev = result_end;
+			second_follow->next = NULL;
+
+			result_end = second_follow;
+		}
+
+		second_follow = next;
+	}
+
+	return result;
+}
+
+UNIT_LIST *_game_msort_unit_compare(UNIT_LIST *first, UNIT_LIST *second)
+{
+	int32_t ax, ay, bx, by;
+	double afx, afy, bfx, bfy;
+
+	if (first == NULL)
+	{
+		return second;
+	}
+	if (second == NULL)
+	{
+		return first;
+	}
+
+	//sorting criteria
+	ax = (int32_t)first->unit.base.x;
+	ay = (int32_t)first->unit.base.y;
+
+	bx = (int32_t)second->unit.base.x;
+	by = (int32_t)second->unit.base.y;
+
+	// first criteria: which "tile y" is less (render order / topwards)
+	if (-ax + ay < -bx + by)
+	{
+		return first;
+	}
+	if (-ax + ay > -bx + by)
+	{
+		return second;
+	}
+
+	// second criteria: which "tile x" is less (leftwards)
+	if (ax < bx)
+	{
+		return first;
+	}
+	if (ax > bx)
+	{
+		return second;
+	}
+
+	// third criteria: which "screen y" is less (topwards)
+	afx = first->unit.base.x;
+	afy = first->unit.base.y;
+
+	bfx = second->unit.base.x;
+	bfy = second->unit.base.y;
+
+	if (-afx + afy < -bfx + bfy)
+	{
+		return first;
+	}
+	if (-afx + afy > -bfx + bfy)
+	{
+		return second;
+	}
+
+	// default to this when all else fails
+	return first;
 }
