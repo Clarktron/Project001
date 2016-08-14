@@ -68,6 +68,9 @@
     <ClCompile Include="source\menu.c">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="source\unit.c">
+      <Filter>source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\system.h">
@@ -306,6 +309,9 @@
     </ClInclude>
     <ClInclude Include="dependencies\SDL_image.h">
       <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="include\unit.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

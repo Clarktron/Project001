@@ -5,7 +5,7 @@
 #include <SDL.h>
 
 #define SCREEN_WIDTH (640)
-#define SCREEN_HEIGHT (480)
+#define SCREEN_HEIGHT (320)
 
 #define PROGRAM_NAME ("Project001")
 

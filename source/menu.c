@@ -86,6 +86,11 @@ MENU_S *menu_setup()
 {
 	MENU_S *menu;
 	menu = malloc(sizeof(MENU_S));
+	if (menu == NULL)
+	{
+		log_output("menu: Insufficient memory\n");
+		return NULL;
+	}
 	memset(menu, 0, sizeof(MENU_S));
 	return menu;
 }

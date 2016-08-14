@@ -142,7 +142,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <GenerateDebugInformation>Debug</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -155,7 +156,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <GenerateDebugInformation>Debug</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -242,6 +244,7 @@
     <ClCompile Include="source\menu.c" />
     <ClCompile Include="source\render.c" />
     <ClCompile Include="source\system.c" />
+    <ClCompile Include="source\unit.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\begin_code.h" />
@@ -323,6 +326,7 @@
     <ClInclude Include="include\render.h" />
     <ClInclude Include="include\state.h" />
     <ClInclude Include="include\system.h" />
+    <ClInclude Include="include\unit.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\0000.pmap" />
