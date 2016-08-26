@@ -5,6 +5,18 @@
 #include <string.h>
 #include <math.h>
 
+#define SQRT_RIGHT_ANGLE_TRI (0.70710678)
+
+const UNIT unit_defaults[NUM_UNIT_DEFAULTS] =
+{
+	{
+		.tank = { TYPE_GUNNER, 0, NULL, 0.0, 0.0, 0.015, 0.0, 0.1, 0.1, 100, 100, 2, 2, 10, 75}
+	},
+	{
+		.gunner = {TYPE_GUNNER, 0, NULL, 0.0, 0.0, 0.015, 0.0, 0.1, 0.1, 100, 100, 2, 2, 10, 75}
+	}
+};
+
 UNIT_LIST *_unit_msort_unit_list_compare(UNIT_LIST *first, UNIT_LIST *second);
 UNIT_LIST *_unit_msort_unit_list_merge(UNIT_LIST *first, UNIT_LIST *second);
 
@@ -13,6 +25,7 @@ UNIT_BASE unit_create_base(double x, double y, double max_speed, double speed, d
 	UNIT_BASE new_unit;
 
 	new_unit.selected = 0;
+	new_unit.path = NULL;
 	new_unit.x = x;
 	new_unit.y = y;
 	new_unit.max_speed = max_speed;
@@ -32,6 +45,7 @@ UNIT_GUNNER unit_create_gunner(UNIT_BASE base, uint64_t bullet_speed, uint64_t a
 	UNIT_GUNNER new_unit;
 
 	new_unit.selected = base.selected;
+	new_unit.path = base.path;
 	new_unit.x = base.x;
 	new_unit.y = base.y;
 	new_unit.max_speed = base.max_speed;
@@ -253,6 +267,7 @@ UNIT_LIST *_unit_msort_unit_list_compare(UNIT_LIST *first, UNIT_LIST *second)
 {
 	int32_t ax, ay, bx, by;
 	double afx, afy, bfx, bfy;
+	double aoff, boff;
 
 	if (first == NULL)
 	{
@@ -263,12 +278,15 @@ UNIT_LIST *_unit_msort_unit_list_compare(UNIT_LIST *first, UNIT_LIST *second)
 		return first;
 	}
 
-	//sorting criteria
-	ax = (int32_t)first->unit.base.x;
-	ay = (int32_t)first->unit.base.y;
+	aoff = first->unit.base.size * SQRT_RIGHT_ANGLE_TRI;
+	boff = second->unit.base.size * SQRT_RIGHT_ANGLE_TRI;
 
-	bx = (int32_t)second->unit.base.x;
-	by = (int32_t)second->unit.base.y;
+	//sorting criteria
+	ax = (int32_t)(first->unit.base.x - aoff);
+	ay = (int32_t)(first->unit.base.y + aoff);
+
+	bx = (int32_t)(second->unit.base.x - boff);
+	by = (int32_t)(second->unit.base.y + boff);
 
 	// first criteria: which "tile y" is less (render order / topwards)
 	if (-ax + ay < -bx + by)
@@ -310,17 +328,115 @@ UNIT_LIST *_unit_msort_unit_list_compare(UNIT_LIST *first, UNIT_LIST *second)
 	return first;
 }
 
-UNIT_PATH *unit_pathfind(UNIT unit, double x, double y)
+void unit_path_add(UNIT *unit, double x, double y)
 {
-	UNIT_PATH *path_head;
-
-	if ((path_head = malloc(sizeof(UNIT_PATH))) == NULL)
+	if (unit->base.path == NULL)
 	{
-		return NULL;
+		unit->base.path = (UNIT_PATH *)malloc(sizeof(UNIT_PATH));
+		if (unit->base.path == NULL)
+		{
+			log_output("unit: Unable to allocate memory\n");
+			return;
+		}
+		unit->base.path->next = NULL;
+		unit->base.path->x = x;
+		unit->base.path->y = y;
 	}
-	path_head->next = NULL;
-	path_head->x = x;
-	path_head->y = y;
+	else
+	{
+		UNIT_PATH *seeker = unit->base.path;
+		while (seeker->next != NULL)
+		{
+			seeker = seeker->next;
+		}
+		seeker->next = (UNIT_PATH *)malloc(sizeof(UNIT_PATH));
+		if (seeker->next == NULL)
+		{
+			log_output("unit: Unable to allocate memory\n");
+			return;
+		}
+		seeker->next = NULL;
+		seeker->x = x;
+		seeker->y = y;
+	}
+}
 
-	return path_head;
+void unit_path_add_front(UNIT *unit, double x, double y)
+{
+	if (unit->base.path == NULL)
+	{
+		unit->base.path = (UNIT_PATH *)malloc(sizeof(UNIT_PATH));
+		if (unit->base.path == NULL)
+		{
+			log_output("unit: Unable to allocate memory\n");
+			return;
+		}
+		unit->base.path->next = NULL;
+		unit->base.path->x = x;
+		unit->base.path->y = y;
+	}
+	else
+	{
+		UNIT_PATH *new_path = NULL;
+
+		new_path = (UNIT_PATH *)malloc(sizeof(UNIT_PATH));
+		if (new_path == NULL)
+		{
+			log_output("unit: Unable to allocate memory\n");
+			return;
+		}
+
+		new_path->next = unit->base.path;
+		new_path->x = x;
+		new_path->y = y;
+		unit->base.path = new_path;
+	}
+}
+
+void unit_path_remove(UNIT *unit)
+{
+	if (unit->base.path != NULL)
+	{
+		UNIT_PATH *next = unit->base.path->next;
+		free(unit->base.path);
+		unit->base.path = next;
+	}
+	else
+	{
+		log_output("unit: Unable to remove path, already empty\n");
+	}
+}
+
+void unit_path_delete(UNIT *unit)
+{
+	UNIT_PATH *seeker = unit->base.path;
+	while (seeker != NULL)
+	{
+		UNIT_PATH *trailer = seeker;
+		seeker = seeker->next;
+		free(trailer);
+	}
+	unit->base.path = NULL;
+}
+
+void unit_path_step(UNIT *unit)
+{
+	if (unit->base.path != NULL)
+	{
+		double x_sep = unit->base.path->x - unit->base.x;
+		double y_sep = unit->base.path->y - unit->base.y;
+		double len = sqrt((x_sep * x_sep) + (y_sep * y_sep));
+		double steps = ceil(len / unit->base.max_speed);
+		if (steps > 1)
+		{
+			unit->base.x += x_sep / steps;
+			unit->base.y += y_sep / steps;
+		}
+		else
+		{
+			unit->base.x = unit->base.path->x;
+			unit->base.y = unit->base.path->y;
+			unit_path_remove(unit);
+		}
+	}
 }

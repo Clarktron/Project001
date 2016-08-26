@@ -71,6 +71,12 @@
     <ClCompile Include="source\unit.c">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="source\map.c">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\pathing.c">
+      <Filter>source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\system.h">
@@ -311,6 +317,12 @@
       <Filter>dependencies</Filter>
     </ClInclude>
     <ClInclude Include="include\unit.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\map.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\pathing.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

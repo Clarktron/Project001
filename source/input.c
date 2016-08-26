@@ -1,5 +1,4 @@
 #include "input.h"
-#include "render.h"
 #include "log.h"
 
 #include <string.h>
@@ -75,6 +74,20 @@ int32_t input_poll(INPUT_S *input)
 				if (input->mouse_wheel_cb != NULL && input->enable_cb)
 				{
 					input->mouse_wheel_cb(ev.wheel, input->mouse_wheel_ptr);
+				}
+				break;
+			case SDL_WINDOWEVENT:
+				if (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
+				{
+					input->enable_cb = 1;
+					SDL_CaptureMouse(1);
+					break;
+				}
+				if (ev.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
+				{
+					input->enable_cb = 0;
+					SDL_CaptureMouse(0);
+					break;
 				}
 				break;
 		}
