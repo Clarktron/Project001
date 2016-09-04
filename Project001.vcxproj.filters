@@ -444,6 +444,9 @@
     <None Include="resources\0002.pmap">
       <Filter>resources</Filter>
     </None>
+    <None Include="resources\0003.pmap">
+      <Filter>resources</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libraries\x86\SDL2.lib">

@@ -4,6 +4,7 @@
 #include "menu.h"
 
 #include <Windows.h>
+#include <crtdbg.h>
 
 #ifdef PLATFORM_RELEASE
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -12,6 +13,7 @@ int main(int argc, char *argv[])
 #endif
 {
 	MENU_S *menu;
+	_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_CRT_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_CHECK_EVERY_16_DF);
 #ifndef PLATFORM_RELEASE
 	int i;
 	for (i = 0; i < argc; i++)

@@ -6,15 +6,18 @@
 #include "game.h"
 
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
-#define INITIAL_MESH_NODES (1)
-#define INITIAL_CONNECTING_NODES (1)
+#define INITIAL_MESH_NODES (10)
+#define INITIAL_CONNECTING_NODES (10)
+#define INITIAL_LIST_SIZE (10)
+#define DRAW_SCALE (30)
 
 void _pathing_add_connecting_node(NODE *node, uint64_t index, double dist);
 void _pathing_generate_mesh(NODE_MESH *mesh, double size, WALL_GRID *grid);
-void _pathing_connect_node(NODE_MESH *mesh, double size, uint64_t a, uint64_t b, WALL_GRID *grid);
+uint8_t _pathing_connect_node(NODE_MESH *mesh, double size, uint64_t a, uint64_t b, WALL_GRID *grid);
 void _pathing_connect_mesh(NODE_MESH *mesh, double size, WALL_GRID *grid);
 uint8_t _pathing_los_check(double ax1, double ay1, double ax2, double ay2, double bx1, double by1, double bx2, double by2);
 uint8_t _pathing_corners_match(MAP *map, uint64_t x, uint64_t y, uint8_t up);
@@ -30,11 +33,19 @@ uint64_t pathing_node_mesh_insert(NODE_MESH *mesh, double x, double y, double si
 	uint64_t i;
 	uint64_t index = _pathing_node_mesh_insert_quick(mesh, x, y);
 
+	mesh->mesh[index].los_nodes = malloc(sizeof(CONNECTOR) * INITIAL_CONNECTING_NODES);
+	memset(mesh->mesh[index].los_nodes, 0, sizeof(CONNECTOR) * INITIAL_CONNECTING_NODES);
+	mesh->mesh[index].los_nodes_alloc = INITIAL_CONNECTING_NODES;
+
+	// for every node in the mesh
 	for (i = 0; i < mesh->mesh_size; ++i)
 	{
+		// if we aren't the new node
 		if (i != index)
 		{
+			// connect the new node to us
 			_pathing_connect_node(mesh, size, index, i, grid);
+			// connect us to the new node
 			_pathing_connect_node(mesh, size, i, index, grid);
 		}
 	}
@@ -44,51 +55,79 @@ uint64_t pathing_node_mesh_insert(NODE_MESH *mesh, double x, double y, double si
 
 void pathing_node_mesh_remove(NODE_MESH *mesh, uint64_t index)
 {
-	uint64_t i, j, k;
+	uint64_t i, j;
+	uint64_t last_mesh_index = mesh->mesh_size - 1;
 
+	// A is the indexed node
+	// B is the node referenced
+	//  by it's connection
+	// 
+	//      A's connection (Ax)
+	// .--. ------------------> .--.
+	// |A |                     |B |
+	// '--' <------------------ '--'
+	//      B's connection (Bx)
+
+	// for every one of A's connections
 	for (i = 0; i < mesh->mesh[index].los_nodes_size; ++i)
 	{
-		if (i != index)
+		// if Ax isn't pointing at us (always the case?)
+		if (mesh->mesh[index].los_nodes[i].index != index)
 		{
+			// get the index of B
 			uint64_t connected = mesh->mesh[index].los_nodes[i].index;
 
+			// for every one of B's connections
 			for (j = 0; j < mesh->mesh[connected].los_nodes_size; ++j)
 			{
+				// if Bx is pointing at us
 				if (mesh->mesh[connected].los_nodes[j].index == index)
 				{
-					CONNECTOR *connections = NULL;
-					uint64_t count = 0;
+					// this node is Bn
+					uint64_t size = mesh->mesh[connected].los_nodes_size;
+					uint64_t last_index;
+					double last_dist;
+
+					// make B's list one smaller
 					mesh->mesh[connected].los_nodes_size--;
-					connections = (CONNECTOR *)malloc(sizeof(CONNECTOR) * mesh->mesh[connected].los_nodes_size);
-					if (connections == NULL)
+
+					// if Bn isn't the last node in the list
+					if (j != size - 1)
 					{
-						log_output("pathing: Unable to allocate memory\n");
-						return;
+						// copy the last connection of B's list into Bn
+						last_index = mesh->mesh[connected].los_nodes[size - 1].index;
+						last_dist = mesh->mesh[connected].los_nodes[size - 1].dist;
+
+						mesh->mesh[connected].los_nodes[j].index = last_index;
+						mesh->mesh[connected].los_nodes[j].dist = last_dist;
+
+						mesh->mesh[connected].los_nodes[size - 1].index = 0;
+						mesh->mesh[connected].los_nodes[size - 1].dist = 0.0;
 					}
-					memcpy(connections, mesh->mesh[connected].los_nodes, sizeof(CONNECTOR) * mesh->mesh[connected].los_nodes_size);
-
-					memset(mesh->mesh[connected].los_nodes, 0, mesh->mesh[connected].los_nodes_size);
-
-					for (k = 0; k < mesh->mesh[connected].los_nodes_size; ++k)
+					else
 					{
-						uint64_t temp_index = connections[k].index;
-						if (temp_index != index)
-						{
-							mesh->mesh[connected].los_nodes[count].dist = connections[k].dist;
-							mesh->mesh[connected].los_nodes[count].index = temp_index;
-							++count;
-						}
+						// reset the values of Bn
+						mesh->mesh[connected].los_nodes[j].index = 0;
+						mesh->mesh[connected].los_nodes[j].dist = 0.0;
 					}
 
-					mesh->mesh[connected].los_nodes[mesh->mesh[connected].los_nodes_size].dist = -1.0;
-					mesh->mesh[connected].los_nodes[mesh->mesh[connected].los_nodes_size].index = 0;
-
-					free(connections);
+					// break, assuming that we only point there once (always the case?)
 					break;
 				}
 			}
 		}
 	}
+
+	// if we aren't the last index
+	if (index != last_mesh_index)
+	{
+		// copy the last node over us
+		memcpy(&(mesh->mesh[index]), &(mesh->mesh[last_mesh_index]), sizeof(NODE));
+	}
+	// clear the last node
+	memset(&(mesh->mesh[last_mesh_index]), 0, sizeof(NODE));
+	// make the mesh smaller
+	mesh->mesh_size--;
 }
 
 uint64_t _pathing_node_mesh_insert_quick(NODE_MESH *mesh, double x, double y)
@@ -120,7 +159,7 @@ uint64_t _pathing_node_mesh_insert_quick(NODE_MESH *mesh, double x, double y)
 				return 0;
 			}
 			mesh->mesh = temp;
-			memset(mesh->mesh + mesh_alloc, 0, mesh->mesh_alloc - mesh_alloc);
+			memset(mesh->mesh + mesh_alloc, 0, sizeof(NODE) * (mesh->mesh_alloc - mesh_alloc));
 		}
 	}
 	index = mesh->mesh_size;
@@ -164,7 +203,7 @@ void _pathing_add_connecting_node(NODE *node, uint64_t index, double dist)
 				return;
 			}
 			node->los_nodes = temp;
-			memset(node->los_nodes + nodes_alloc, 0, node->los_nodes_alloc - nodes_alloc);
+			memset(node->los_nodes + nodes_alloc, 0, sizeof(CONNECTOR) * (node->los_nodes_alloc - nodes_alloc));
 		}
 	}
 	node->los_nodes[node->los_nodes_size].index = index;
@@ -366,98 +405,497 @@ void _pathing_generate_mesh(NODE_MESH *mesh, double size, WALL_GRID *grid)
 	}
 }
 
-void _pathing_connect_node(NODE_MESH *mesh, double size, uint64_t a, uint64_t b, WALL_GRID *grid)
+uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size, double x_a, double y_a, double x_b, double y_b)
 {
-	uint64_t k, l;
 	uint8_t *wall_grid = grid->wall_grid;
 	uint64_t wall_w = grid->wall_w;
+
+	uint16_t walls = 0;
+
+	if (x >= grid->wall_w - 1 || y >= grid->wall_h - 1)
+	{
+		return 1;
+	}
+
+	walls |= wall_grid[x + y * wall_w];
+	walls |= (wall_grid[x + 1 + y * wall_w] & 0x0001) << 2;
+	walls |= (wall_grid[x + (y + 1) * wall_w] & 0x0002) << 2;
+
+	if (y > 0)
+	{
+		walls |= (wall_grid[x + (y - 1) * wall_w] & 0x0001) << 4;
+		walls |= (wall_grid[x + 1 + (y - 1) * wall_w] & 0x0001) << 5;
+	}
+
+	walls |= (wall_grid[x + (y + 1) * wall_w] & 0x0001) << 6;
+	walls |= (wall_grid[x + 1 + (y + 1) * wall_w] & 0x0001) << 7;
+
+	walls |= (wall_grid[x + 1 + y * wall_w] & 0x0002) << 7;
+	walls |= (wall_grid[x + 1 + (y + 1) * wall_w] & 0x0002) << 8;
+
+	if (x > 0)
+	{
+		walls |= (wall_grid[x - 1 + y * wall_w] & 0x0002) << 9;
+		walls |= (wall_grid[x - 1 + (y + 1) * wall_w] & 0x0002) << 10;
+	}
+
+	// left check
+	if (walls & 0x0001)
+	{
+		double x1 = x - size;
+		double x2 = x + size;
+		double y1 = y - size;
+		double y2 = y + 1 + size;
+
+		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
+		{
+			return 1;
+		}
+	}
+
+	// top check
+	if (walls & 0x0002)
+	{
+		double x1 = x - size;
+		double x2 = x + 1 + size;
+		double y1 = y - size;
+		double y2 = y + size;
+
+		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
+		{
+			return 1;
+		}
+	}
+
+	// right check
+	if (walls & 0x0004)
+	{
+		double x1 = x + 1 - size;
+		double x2 = x + 1 + size;
+		double y1 = y - size;
+		double y2 = y + 1 + size;
+
+		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
+		{
+			return 1;
+		}
+	}
+
+	// bottom check
+	if (walls & 0x0008)
+	{
+		double x1 = x - size;
+		double x2 = x + 1 + size;
+		double y1 = y + 1 - size;
+		double y2 = y + 1 + size;
+
+		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
+		{
+			return 1;
+		}
+	}
+
+	// top-l check
+	if (walls & 0x0010)
+	{
+		double x1 = x - size;
+		double x2 = x + size;
+		double y1 = y - 1 - size;
+		double y2 = y + size;
+
+		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
+		{
+			return 1;
+		}
+	}
+
+	// top-r check
+	if (walls & 0x0020)
+	{
+		double x1 = x + 1 - size;
+		double x2 = x + 1 + size;
+		double y1 = y - 1 - size;
+		double y2 = y + size;
+
+		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
+		{
+			return 1;
+		}
+	}
+
+	// bottom-l check
+	if (walls & 0x0040)
+	{
+		double x1 = x - size;
+		double x2 = x + size;
+		double y1 = y + 1 - size;
+		double y2 = y + 2 + size;
+
+		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
+		{
+			return 1;
+		}
+	}
+
+	// bottom-r check
+	if (walls & 0x0080)
+	{
+		double x1 = x + 1 - size;
+		double x2 = x + 1 + size;
+		double y1 = y + 1 - size;
+		double y2 = y + 2 + size;
+
+		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
+		{
+			return 1;
+		}
+	}
+
+	// right-t check
+	if (walls & 0x0100)
+	{
+		double x1 = x + 1 - size;
+		double x2 = x + 2 + size;
+		double y1 = y - size;
+		double y2 = y + size;
+
+		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
+		{
+			return 1;
+		}
+	}
+
+	// right-b check
+	if (walls & 0x0200)
+	{
+		double x1 = x + 1 - size;
+		double x2 = x + 2 + size;
+		double y1 = y + 1 - size;
+		double y2 = y + 1 + size;
+
+		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
+		{
+			return 1;
+		}
+	}
+
+	// left-t check
+	if (walls & 0x0400)
+	{
+		double x1 = x - 1 - size;
+		double x2 = x + size;
+		double y1 = y - size;
+		double y2 = y + size;
+
+		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
+		{
+			return 1;
+		}
+	}
+
+	// left-b check
+	if (walls & 0x0800)
+	{
+		double x1 = x - 1 - size;
+		double x2 = x + size;
+		double y1 = y + 1 - size;
+		double y2 = y + 1 + size;
+
+		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
+		{
+			return 1;
+		}
+		else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+uint8_t _pathing_connect_node(NODE_MESH *mesh, double size, uint64_t a, uint64_t b, WALL_GRID *grid)
+{
+	uint64_t i, k, l;
 	double x_a = mesh->mesh[a].x;
 	double y_a = mesh->mesh[a].y;
 
 	double x_b = mesh->mesh[b].x;
 	double y_b = mesh->mesh[b].y;
 
-	int32_t x_start = max(min((int32_t)mesh->mesh[a].x, (int32_t)mesh->mesh[b].x), 1) - 1;
-	int32_t y_start = max(min((int32_t)mesh->mesh[a].y, (int32_t)mesh->mesh[b].y), 1) - 1;
-	int32_t x_end = max((int32_t)mesh->mesh[a].x, (int32_t)mesh->mesh[b].x) + 1;
-	int32_t y_end = max((int32_t)mesh->mesh[a].y, (int32_t)mesh->mesh[b].y) + 1;
+	int32_t x_start, y_start, x_end, y_end;
+	x_start = (int32_t)x_a;
+	y_start = (int32_t)y_a;
 
-	uint8_t intersect = 0;
+	x_end = (int32_t)x_b;
+	y_end = (int32_t)y_b;
 
-	for (l = y_start; l < y_end; l++)
+	k = x_start;
+	l = y_start;
+	
+	int32_t dx = abs(x_end - x_start), dy = abs(y_end - y_start);
+	double e = -1.0;
+	double de = 0.0;
+
+	if (dx > dy)
 	{
-		for (k = x_start; k < x_end; k++)
+		uint8_t left = 0;
+		uint8_t up = 0;
+		if (x_end - x_start < 0)
 		{
-			// top check
-			if (wall_grid[k + l * wall_w] & 0x02)
-			{
-				double x1 = k - size;
-				double x2 = k + 1 + size;
-				double y1 = l - size;
-				double y2 = l + size;
-
-				if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
-				{
-					intersect = 1;
-					break;
-				}
-				else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
-				{
-					intersect = 1;
-					break;
-				}
-				else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
-				{
-					intersect = 1;
-					break;
-				}
-				else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
-				{
-					intersect = 1;
-					break;
-				}
-			}
-
-			// left check
-			if (wall_grid[k + l * wall_w] & 0x01)
-			{
-				double x1 = k - size;
-				double x2 = k + size;
-				double y1 = l - size;
-				double y2 = l + 1 + size;
-
-				if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
-				{
-					intersect = 1;
-					break;
-				}
-				else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y2, x2, y2) != 0)
-				{
-					intersect = 1;
-					break;
-				}
-				else if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x1, y2) != 0)
-				{
-					intersect = 1;
-					break;
-				}
-				else if (_pathing_los_check(x_a, y_a, x_b, y_b, x2, y1, x2, y2) != 0)
-				{
-					intersect = 1;
-					break;
-				}
-			}
+			left = 1;
+		}
+		if (y_end - y_start < 0)
+		{
+			up = 1;
 		}
 
-		if (intersect)
+		if (dx != 0)
 		{
-			break;
+			de = fabs((double)dy / dx);
+		}
+
+		// We are going to move along the x axis (left to right)
+		uint64_t count = abs((int32_t)x_end - x_start) + 1;
+		for (i = 0; i < count; ++i)
+		{
+			if (_pathing_check_node(grid, k, l, size, x_a, y_a, x_b, y_b))
+			{
+				/*
+				render_line((int32_t)((k - 0.5) * DRAW_SCALE), (int32_t)(l * DRAW_SCALE), (int32_t)((k + 1.5) * DRAW_SCALE), (int32_t)(l * DRAW_SCALE), 0xFF, 0x00, 0x00, 1);
+				render_line((int32_t)((k - 0.5) * DRAW_SCALE), (int32_t)((l + 1) * DRAW_SCALE), (int32_t)((k + 1.5) * DRAW_SCALE), (int32_t)((l + 1) * DRAW_SCALE), 0xFF, 0x00, 0x00, 1);
+				render_line((int32_t)(k * DRAW_SCALE), (int32_t)((l - 0.5) * DRAW_SCALE), (int32_t)(k * DRAW_SCALE), (int32_t)((l + 1.5) * DRAW_SCALE), 0xFF, 0x00, 0x00, 1);
+				render_line((int32_t)((k + 1) * DRAW_SCALE), (int32_t)((l - 0.5) * DRAW_SCALE), (int32_t)((k + 1) * DRAW_SCALE), (int32_t)((l + 1.5) * DRAW_SCALE), 0xFF, 0x00, 0x00, 1);
+				*/
+				return 1;
+			}
+			/*
+			render_line((int32_t)((k - 0.5) * DRAW_SCALE), (int32_t)(l * DRAW_SCALE), (int32_t)((k + 1.5) * DRAW_SCALE), (int32_t)(l * DRAW_SCALE), 0x00, 0x7F, 0x00, 1);
+			render_line((int32_t)((k - 0.5) * DRAW_SCALE), (int32_t)((l + 1) * DRAW_SCALE), (int32_t)((k + 1.5) * DRAW_SCALE), (int32_t)((l + 1) * DRAW_SCALE), 0x00, 0x7F, 0x00, 1);
+			render_line((int32_t)(k * DRAW_SCALE), (int32_t)((l - 0.5) * DRAW_SCALE), (int32_t)(k * DRAW_SCALE), (int32_t)((l + 1.5) * DRAW_SCALE), 0x00, 0x7F, 0x00, 1);
+			render_line((int32_t)((k + 1) * DRAW_SCALE), (int32_t)((l - 0.5) * DRAW_SCALE), (int32_t)((k + 1) * DRAW_SCALE), (int32_t)((l + 1.5) * DRAW_SCALE), 0x00, 0x7F, 0x00, 1);
+			*/
+			e += de;
+			if (e >= 0.0)
+			{
+				(up) ? --l : ++l;
+				e -= 1.0;
+			}
+			(left) ? --k : ++k;
+		}
+	}
+	else
+	{
+		uint8_t left = 0;
+		uint8_t up = 0;
+		if (x_end - x_start < 0)
+		{
+			left = 1;
+		}
+		if (y_end - y_start < 0)
+		{
+			up = 1;
+		}
+
+		if (dy != 0)
+		{
+			de = fabs((double)dx / dy);
+		}
+
+		// We are going to move along the y axis (top to bottom)
+		uint64_t count = abs((int32_t)y_end - y_start) + 1;
+		for (i = 0; i < count; ++i)
+		{
+			if (_pathing_check_node(grid, k, l, size, x_a, y_a, x_b, y_b))
+			{
+				/*
+				render_line((int32_t)((k - 0.5) * DRAW_SCALE), (int32_t)(l * DRAW_SCALE), (int32_t)((k + 1.5) * DRAW_SCALE), (int32_t)(l * DRAW_SCALE), 0xFF, 0x00, 0x00, 1);
+				render_line((int32_t)((k - 0.5) * DRAW_SCALE), (int32_t)((l + 1) * DRAW_SCALE), (int32_t)((k + 1.5) * DRAW_SCALE), (int32_t)((l + 1) * DRAW_SCALE), 0xFF, 0x00, 0x00, 1);
+				render_line((int32_t)(k * DRAW_SCALE), (int32_t)((l - 0.5) * DRAW_SCALE), (int32_t)(k * DRAW_SCALE), (int32_t)((l + 1.5) * DRAW_SCALE), 0xFF, 0x00, 0x00, 1);
+				render_line((int32_t)((k + 1) * DRAW_SCALE), (int32_t)((l - 0.5) * DRAW_SCALE), (int32_t)((k + 1) * DRAW_SCALE), (int32_t)((l + 1.5) * DRAW_SCALE), 0xFF, 0x00, 0x00, 1);
+				*/
+				return 1;
+			}
+			/*
+			render_line((int32_t)((k - 0.5) * DRAW_SCALE), (int32_t)(l * DRAW_SCALE), (int32_t)((k + 1.5) * DRAW_SCALE), (int32_t)(l * DRAW_SCALE), 0x00, 0x7F, 0x00, 1);
+			render_line((int32_t)((k - 0.5) * DRAW_SCALE), (int32_t)((l + 1) * DRAW_SCALE), (int32_t)((k + 1.5) * DRAW_SCALE), (int32_t)((l + 1) * DRAW_SCALE), 0x00, 0x7F, 0x00, 1);
+			render_line((int32_t)(k * DRAW_SCALE), (int32_t)((l - 0.5) * DRAW_SCALE), (int32_t)(k * DRAW_SCALE), (int32_t)((l + 1.5) * DRAW_SCALE), 0x00, 0x7F, 0x00, 1);
+			render_line((int32_t)((k + 1) * DRAW_SCALE), (int32_t)((l - 0.5) * DRAW_SCALE), (int32_t)((k + 1) * DRAW_SCALE), (int32_t)((l + 1.5) * DRAW_SCALE), 0x00, 0x7F, 0x00, 1);
+			*/
+			e += de;
+			if (e >= 0.0)
+			{
+				(left) ? --k : ++k;
+				e -= 1.0;
+			}
+			(up) ? --l : ++l;
 		}
 	}
 
-	if (!intersect)
+	_pathing_add_connecting_node(&(mesh->mesh[a]), b, _pathing_get_distance(x_a, y_a, x_b, y_b));
+
+	return 0;
+}
+
+void _pathing_connect_to_all(NODE_MESH *mesh, WALL_GRID *grid, uint64_t index, double size)
+{
+	uint64_t i;
+	if (mesh->mesh[index].los_nodes == NULL)
 	{
-		_pathing_add_connecting_node(&mesh->mesh[a], b, _pathing_get_distance(x_a, y_a, x_b, y_b));
+		for (i = 0; i < mesh->mesh_size; ++i)
+		{
+			if (i != index)
+			{
+				if (_pathing_connect_node(mesh, size, index, i, grid) == 0)
+				{
+					if (mesh->mesh[i].los_nodes != NULL && mesh->mesh[i].los_nodes_size > 0)
+					{
+						_pathing_connect_node(mesh, size, i, index, grid);
+					}
+				}
+				//render_line((int32_t)(mesh->mesh[current].x * DRAW_SCALE), (int32_t)(mesh->mesh[current].y * DRAW_SCALE), (int32_t)(mesh->mesh[i].x * DRAW_SCALE), (int32_t)(mesh->mesh[i].y * DRAW_SCALE), 0x00, 0x00, 0x00, 1);
+			}
+		}
 	}
 }
 
@@ -471,7 +909,15 @@ void _pathing_connect_mesh(NODE_MESH *mesh, double size, WALL_GRID *grid)
 		{
 			if (i != j)
 			{
-				_pathing_connect_node(mesh, size, i, j, grid);
+				//render_line((int32_t)(mesh->mesh[i].x * DRAW_SCALE), (int32_t)(mesh->mesh[i].y * DRAW_SCALE), (int32_t)(mesh->mesh[j].x * DRAW_SCALE), (int32_t)(mesh->mesh[j].y * DRAW_SCALE), 0x00, 0x00, 0x00, 1);
+				if (_pathing_connect_node(mesh, size, i, j, grid))
+				{
+					//render_line((int32_t)(mesh->mesh[i].x * DRAW_SCALE), (int32_t)(mesh->mesh[i].y * DRAW_SCALE), (int32_t)(mesh->mesh[j].x * DRAW_SCALE), (int32_t)(mesh->mesh[j].y * DRAW_SCALE), 0xFF, 0x00, 0x00, 1);
+				}
+				else
+				{
+					//render_line((int32_t)(mesh->mesh[i].x * DRAW_SCALE), (int32_t)(mesh->mesh[i].y * DRAW_SCALE), (int32_t)(mesh->mesh[j].x * DRAW_SCALE), (int32_t)(mesh->mesh[j].y * DRAW_SCALE), 0x00, 0x00, 0x00, 1);
+				}
 			}
 		}
 	}
@@ -625,6 +1071,25 @@ NODE_MESH *pathing_create_mesh(WALL_GRID *grid, double size)
 	return mesh;
 }
 
+NODE_MESH *pathing_create_disconnected_mesh(WALL_GRID *grid, double size)
+{
+	NODE_MESH *mesh = NULL;
+
+	// Generate the mesh
+	mesh = (NODE_MESH *)malloc(sizeof(NODE_MESH));
+	if (mesh == NULL)
+	{
+		log_output("pathing: Unable to allocate memory\n");
+		return NULL;
+	}
+	memset(mesh, 0, sizeof(NODE_MESH));
+
+	// Insert the nodes based on the map geometry
+	_pathing_generate_mesh(mesh, size, grid);
+
+	return mesh;
+}
+
 void pathing_destroy_mesh(NODE_MESH *mesh)
 {
 	uint64_t i;
@@ -641,14 +1106,15 @@ void _pathing_add_node_to_heap(NODE_MESH mesh, uint64_t **heap, uint64_t *heap_s
 	uint64_t i;
 	if (*heap == NULL)
 	{
-		*heap = (uint64_t *)malloc(sizeof(uint64_t));
+		*heap = (uint64_t *)malloc(sizeof(uint64_t) * INITIAL_LIST_SIZE);
 		if (*heap == NULL)
 		{
 			log_output("pathing: Unable to allocate memory\n");
 			return;
 		}
-		memset(*heap, 0, sizeof(uint64_t));
-		*heap_alloc = 1;
+		memset(*heap, 0, sizeof(uint64_t) * INITIAL_LIST_SIZE);
+		*heap_alloc = INITIAL_LIST_SIZE;
+		*heap_size = 0;
 	}
 	else
 	{
@@ -665,7 +1131,7 @@ void _pathing_add_node_to_heap(NODE_MESH mesh, uint64_t **heap, uint64_t *heap_s
 				return;
 			}
 			*heap = temp;
-			memset(*heap + alloc, 0, *heap_alloc - alloc);
+			memset(*heap + alloc, 0, sizeof(uint64_t) * (*heap_alloc - alloc));
 		}
 	}
 	(*heap)[*heap_size] = node;
@@ -761,7 +1227,44 @@ uint64_t _pathing_remove_node_from_heap(NODE_MESH *mesh, uint64_t **heap, uint64
 	return value;
 }
 
-void pathing_find_path(NODE_MESH *mesh, UNIT *unit, double x_dest, double y_dest)
+void _pathing_add_node_to_buffer(uint64_t **buffer, uint64_t *buffer_size, uint64_t *buffer_alloc, uint64_t node)
+{
+	if (*buffer == NULL)
+	{
+		*buffer = (uint64_t *)malloc(sizeof(uint64_t) * INITIAL_LIST_SIZE);
+		if (*buffer == NULL)
+		{
+			log_output("pathing: Unable to allocate memory\n");
+			return;
+		}
+		memset(*buffer, 0, sizeof(uint64_t) * INITIAL_LIST_SIZE);
+		*buffer_alloc = INITIAL_LIST_SIZE;
+		*buffer_size = 0;
+	}
+	else
+	{
+		if (*buffer_alloc == *buffer_size)
+		{
+			uint64_t alloc = *buffer_alloc;
+			uint64_t *temp = NULL;
+			*buffer_alloc *= 2;
+			temp = (uint64_t *)realloc(*buffer, sizeof(uint64_t) * *buffer_alloc);
+			if (temp == NULL)
+			{
+				log_output("pathing: Unable to allocate memory\n");
+				free(*buffer);
+				return;
+			}
+			*buffer = temp;
+			memset(*buffer + alloc, 0, sizeof(uint64_t) * (*buffer_alloc - alloc));
+		}
+	}
+
+	(*buffer)[*buffer_size] = node;
+	*buffer_size += 1;
+}
+
+void pathing_find_path(NODE_MESH *mesh, WALL_GRID *grid, UNIT *unit, double x_dest, double y_dest)
 {
 	uint64_t *open_nodes = NULL;
 	uint64_t open_nodes_size = 0;
@@ -774,14 +1277,22 @@ void pathing_find_path(NODE_MESH *mesh, UNIT *unit, double x_dest, double y_dest
 	uint64_t end = 0;
 	uint64_t i, j;
 
-	came_from = malloc(sizeof(uint64_t) * mesh->mesh_size);
+	// two more because of the extra start/end nodes
+	came_from = malloc(sizeof(uint64_t) * (mesh->mesh_size + 2));
 	if (came_from == NULL)
 	{
 		log_output("pathing: Unable to allocate memory\n");
 		return;
 	}
-	memset(came_from, 0xFFFFFFFF, sizeof(uint64_t) * mesh->mesh_size);
+	memset(came_from, 0xFFFFFFFF, sizeof(uint64_t) * (mesh->mesh_size + 2));
 
+	start = _pathing_node_mesh_insert_quick(mesh, unit->base.x, unit->base.y);
+	end = _pathing_node_mesh_insert_quick(mesh, x_dest, y_dest);
+
+	_pathing_connect_to_all(mesh, grid, start, unit->base.size);
+	_pathing_connect_to_all(mesh, grid, end, unit->base.size);
+
+	/*
 	for (i = 0; i < mesh->mesh_size; i++)
 	{
 		if (fabs(unit->base.x - mesh->mesh[i].x) < 0.00001 && fabs(unit->base.y - mesh->mesh[i].y) < 0.00001)
@@ -798,6 +1309,7 @@ void pathing_find_path(NODE_MESH *mesh, UNIT *unit, double x_dest, double y_dest
 			break;
 		}
 	}
+	*/
 
 	_pathing_add_node_to_heap(*mesh, &open_nodes, &open_nodes_size, &open_nodes_alloc, start);
 	mesh->mesh[start].g_score = 0.0;
@@ -806,6 +1318,18 @@ void pathing_find_path(NODE_MESH *mesh, UNIT *unit, double x_dest, double y_dest
 	while (open_nodes != NULL)
 	{
 		uint64_t current = _pathing_remove_node_from_heap(mesh, &open_nodes, &open_nodes_size);
+		
+		//render_begin_frame();
+		//pathing_draw_walls(grid);
+		//pathing_draw_nodes(mesh);
+
+		// if this node has not been connected to the mesh, connect it now
+		_pathing_connect_to_all(mesh, grid, current, unit->base.size);
+
+		//render_begin_frame();
+		//pathing_draw_walls(grid);
+		//pathing_draw_nodes(mesh);
+
 		if (current == end)
 		{
 			// reconstruct the path and return it
@@ -823,12 +1347,16 @@ void pathing_find_path(NODE_MESH *mesh, UNIT *unit, double x_dest, double y_dest
 			open_nodes = NULL;
 			free(closed_nodes);
 			closed_nodes = NULL;
+
+			pathing_node_mesh_remove(mesh, end);
+			pathing_node_mesh_remove(mesh, start);
+
 			return;
 		}
 
-		_pathing_add_node_to_heap(*mesh, &closed_nodes, &closed_nodes_size, &closed_nodes_alloc, current);
+		_pathing_add_node_to_buffer(&closed_nodes, &closed_nodes_size, &closed_nodes_alloc, current);
 
-		for (i = 0; i < mesh->mesh[current].los_nodes_size; i++)
+		for (i = 0; i < mesh->mesh[current].los_nodes_size; ++i)
 		{
 			uint8_t in = 0;
 			uint64_t index = mesh->mesh[current].los_nodes[i].index;
@@ -872,52 +1400,79 @@ void pathing_find_path(NODE_MESH *mesh, UNIT *unit, double x_dest, double y_dest
 			}
 		}
 	}
-	if (open_nodes == NULL)
+
+	// failed
+	log_output("pathing: Failed to find path\n");
+	if (came_from != NULL)
 	{
-		// failed
-		log_output("pathing: Failed to find path\n");
-		if (came_from != NULL)
-		{
-			free(came_from);
-		}
-		if (open_nodes != NULL)
-		{
-			free(open_nodes);
-		}
-		if (closed_nodes != NULL)
-		{
-			free(closed_nodes);
-		}
-		return;
+		free(came_from);
 	}
+	if (open_nodes != NULL)
+	{
+		free(open_nodes);
+	}
+	if (closed_nodes != NULL)
+	{
+		free(closed_nodes);
+	}
+
+	pathing_node_mesh_remove(mesh, end);
+	pathing_node_mesh_remove(mesh, start);
 }
 
-void pathing_draw_walls(MAP *map, uint8_t *walls, uint64_t wall_w, uint64_t wall_h, int32_t x_off, int32_t y_off)
+void pathing_draw_walls(WALL_GRID *grid)
 {
 	uint64_t i, j;
+	uint8_t *walls = grid->wall_grid;
+	uint64_t wall_w = grid->wall_w;
+	uint64_t wall_h = grid->wall_h;
 
 	for (j = 0; j < wall_h; j++)
 	{
 		for (i = 0; i < wall_w; i++)
 		{
-			int32_t x1, y1, x2, y2, x3, y3;
-			map_unit_coords_to_drawing_coords(map, (double)i, (double)j, &x1, &y1);
-			map_unit_coords_to_drawing_coords(map, (double)i + 1, (double)j, &x2, &y2);
-			map_unit_coords_to_drawing_coords(map, (double)i, (double)j + 1, &x3, &y3);
-			x1 -= x_off;
-			x2 -= x_off;
-			y1 -= y_off;
-			y2 -= y_off;
+			int32_t x1 = (int32_t)i;
+			int32_t x2 = (int32_t)i + 1;
+			int32_t y1 = (int32_t)j;
+			int32_t y2 = (int32_t)j + 1;
 			if (walls[i + j * wall_h] & 0x01)
 			{
 				// left
-				render_line(x1, y1, x3, y3, 0x00, 0x00, 0xFF, 1);
+				render_line(x1 * DRAW_SCALE, y1 * DRAW_SCALE, x1 * DRAW_SCALE, y2 * DRAW_SCALE, 0x00, 0x00, 0xFF, 1);
 			}
 			if (walls[i + j * wall_h] & 0x02)
 			{
 				// top
-				render_line(x1, y1, x2, y2, 0x00, 0x00, 0xFF, 1);
+				render_line(x1 * DRAW_SCALE, y1 * DRAW_SCALE, x2 * DRAW_SCALE, y1 * DRAW_SCALE, 0x00, 0x00, 0xFF, 1);
 			}
 		}
+	}
+}
+
+void pathing_draw_nodes(NODE_MESH *mesh)
+{
+	uint64_t i, j;
+	NODE_MESH *node_mesh = (NODE_MESH *)mesh;
+
+	for (i = 0; i < node_mesh->mesh_size; i++)
+	{
+		double x, y;
+		x = node_mesh->mesh[i].x;
+		y = node_mesh->mesh[i].y;
+		render_circle((int32_t)(x * DRAW_SCALE), (int32_t)(y * DRAW_SCALE), 4, 0xFF, 0x00, 0x00, 1);
+		for (j = 0; j < node_mesh->mesh[i].los_nodes_size; j++)
+		{
+			double x2, y2;
+			uint64_t index = node_mesh->mesh[i].los_nodes[j].index;
+			x2 = node_mesh->mesh[index].x;
+			y2 = node_mesh->mesh[index].y;
+			render_line((int32_t)(x * DRAW_SCALE), (int32_t)(y * DRAW_SCALE), (int32_t)(x2 * DRAW_SCALE), (int32_t)(y2 * DRAW_SCALE), 0xFF, 0x00, 0x00, 1);
+			//char str[5];
+			//sprintf_s(str, 5, "%llu", index);
+			//render_draw_text(x2 * DRAW_SCALE, y2 * DRAW_SCALE, str, 0, 0x00, 0x00, 0x00, 0xFF, ALIGN_CENTER, ALIGN_CENTER, QUALITY_BEST, 1);
+		}
+		char str[5];
+		sprintf_s(str, 5, "%llu", i);
+		render_draw_text((int32_t)(x * DRAW_SCALE), (int32_t)(y * DRAW_SCALE), str, 0, 0x00, 0x00, 0x00, 0xFF, ALIGN_CENTER, ALIGN_CENTER, QUALITY_BEST, 1);
 	}
 }

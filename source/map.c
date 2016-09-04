@@ -18,8 +18,8 @@ struct map
 	TILE *map;
 	uint64_t map_width;
 	uint64_t map_height;
-	NODE_MESH *unit_meshes[2];
 	WALL_GRID *grid;
+	NODE_MESH *meshes[NUM_UNIT_TYPES];
 };
 
 uint8_t _map_corners_to_index(uint8_t corners);
@@ -128,13 +128,13 @@ MAP *map_generate_random(uint64_t w, uint64_t h)
 			uint64_t index = i + j * w;
 			map->map[index].type = 0;
 			map->map[index].base.elevation = 0;
-			if (system_rand() % 2 == 0)
+			if (system_rand() % 10 == 0)
 			{
-				map->map[index].base.elevation = system_rand() % 2;
+				map->map[index].base.elevation = system_rand() % 10;
 			}
 			map->map[index].base.corners = 0;
 			map->map[index].base.num_units = 0;
-			if (system_rand() % 2 == 0)
+			if (system_rand() % 10 == 0)
 			{
 				if (system_rand() % 2 == 0)
 				{
@@ -306,17 +306,9 @@ void map_destroy(MAP *map)
 {
 	if (map != NULL)
 	{
-		uint64_t i;
 		if (map->grid != NULL)
 		{
 			pathing_destroy_wall_grid(map->grid);
-		}
-		for (i = 0; i < NUM_UNIT_DEFAULTS; ++i)
-		{
-			if (map->unit_meshes[i] != NULL)
-			{
-				pathing_destroy_mesh(map->unit_meshes[i]);
-			}
 		}
 		if (map->map != NULL)
 		{
@@ -383,64 +375,9 @@ void map_draw(MAP *map, UNIT_LIST *list, int32_t x_off, int32_t y_off)
 	{
 		max = map->map_height;
 	}
-	/*
-	top = list;
-	while (top != NULL)
-	{
-		double unit_x = top->unit.base.x;
-		double unit_y = top->unit.base.y;
 
-		int32_t x_coord, y_coord;
-		uint64_t x_start = 0;
-		uint64_t y_start = 0;
-		uint64_t x_end = map->map_width - 1;
-		uint64_t y_end = map->map_height - 1;
-		uint64_t x_grid = (uint64_t)unit_x;
-		uint64_t y_grid = (uint64_t)unit_y;
-
-		if (x_grid > 1)
-		{
-			x_start = x_grid - 1;
-		}
-		if (x_grid < map->map_width - 2)
-		{
-			x_end = x_grid + 1;
-		}
-
-		if (y_grid > 1)
-		{
-			y_start = y_grid - 1;
-		}
-		if (y_grid < map->map_height - 2)
-		{
-			y_end = y_grid + 1;
-		}
-
-		for (j = y_start; j <= y_end; ++j)
-		{
-			for (i = x_start; i <= x_end; ++i)
-			{
-				if (map_unit_is_on_tile(map, unit_x, unit_y, i, j, top->unit.base.size))
-				{
-					uint64_t index = i + j * map->map_width;
-					int32_t x = (int32_t)(i * (TILE_WIDTH / 2) + TILE_WIDTH / 2 + j * (TILE_WIDTH / 2));
-					int32_t y = (int32_t)(j * (TILE_HEIGHT / 2) - i * (TILE_HEIGHT / 2));
-					//map_draw_tile(map->map[index], x - x_off, y - y_off, map->map[index].base.elevation);
-				}
-			}
-		}
-
-		map_unit_coords_to_drawing_coords(map, unit_x, unit_y, &x_coord, &y_coord);
-		x_coord -= x_off;
-		y_coord -= y_off;
-
-		render_draw_unit(0, x_coord, y_coord);
-
-		top = top->next;
-	}
-	*/
-	top = list;
 	//uint32_t count = 0;
+	top = list;
 	for (l = 0; l < map->map_height + map->map_width - 1; ++l)
 	{
 		for (k = 0; k < max && k < l + 1 && k < map->map_height + map->map_width - l - 1; k++)
@@ -456,12 +393,12 @@ void map_draw(MAP *map, UNIT_LIST *list, int32_t x_off, int32_t y_off)
 				j = l - map->map_width + k + 1;
 			}
 			uint64_t index = i + j * map->map_width;
-			//if (map->map[index].base.num_units == 0)
-			//{
-				int32_t x = (int32_t)(i * (TILE_WIDTH / 2) + TILE_WIDTH / 2 + j * (TILE_WIDTH / 2));
-				int32_t y = (int32_t)(j * (TILE_HEIGHT / 2) - i * (TILE_HEIGHT / 2));
+			int32_t x = (int32_t)(i * (TILE_WIDTH / 2) + TILE_WIDTH / 2 + j * (TILE_WIDTH / 2));
+			int32_t y = (int32_t)(j * (TILE_HEIGHT / 2) - i * (TILE_HEIGHT / 2));
+			if (x - x_off + TILE_WIDTH / 2 >= 0 && y - y_off + TILE_HEIGHT / 2 >= 0 && x - x_off - TILE_WIDTH / 2 < SCREEN_WIDTH && y - y_off - TILE_HEIGHT / 2 - (int32_t)map->map[index].base.elevation * TILE_DEPTH < SCREEN_HEIGHT)
+			{
 				map_draw_tile(map->map[index], x - x_off, y - y_off, map->map[index].base.elevation);
-			//}
+			}
 			for (m = 0; m < map->map[index].base.num_units; ++m)
 			{
 				if (top == NULL)
@@ -476,7 +413,10 @@ void map_draw(MAP *map, UNIT_LIST *list, int32_t x_off, int32_t y_off)
 				x_coord -= x_off;
 				y_coord -= y_off;
 
-				render_draw_unit(0, x_coord, y_coord);
+				if (x_coord + UNIT_WIDTH >= 0 && y_coord + UNIT_HEIGHT >= 0 && x_coord - UNIT_WIDTH < SCREEN_WIDTH && y_coord - UNIT_HEIGHT < SCREEN_HEIGHT)
+				{
+					render_draw_unit(0, x_coord, y_coord);
+				}
 				
 				//char str[10];
 				//sprintf(str, "%lu", count++);
@@ -486,20 +426,6 @@ void map_draw(MAP *map, UNIT_LIST *list, int32_t x_off, int32_t y_off)
 			}
 		}
 	}
-
-	/*for (j = 0; j < map->map_height; ++j)
-	{
-		for (i = 0; i < map->map_width; ++i)
-		{
-			uint64_t index = i + j * map->map_width;
-			if (map->map[index].base.num_units == 0)
-			{
-				int32_t x = (int32_t)(i * (TILE_WIDTH / 2) + TILE_WIDTH / 2 + j * (TILE_WIDTH / 2));
-				int32_t y = (int32_t)(j * (TILE_HEIGHT / 2) - i * (TILE_HEIGHT / 2));
-				map_draw_tile(map->map[index], x - x_off, y - y_off, map->map[index].base.elevation);
-			}
-		}
-	}*/
 	
 	top = list;
 	while (top != NULL)
@@ -775,34 +701,13 @@ uint8_t map_unit_is_on_tile(MAP *map, double unit_x, double unit_y, uint64_t til
 void map_set_unit_meshes(MAP *map)
 {
 	uint64_t i;
-	for (i = 0; i < NUM_UNIT_DEFAULTS; ++i)
+	if (map->grid == NULL)
 	{
-		if (map->unit_meshes[i] != NULL)
-		{
-			pathing_destroy_mesh(map->unit_meshes[i]);
-		}
-		if (map->grid == NULL)
-		{
-			map->grid = pathing_generate_wall_grid(map);
-		}
-		map->unit_meshes[i] = pathing_create_mesh(map->grid, unit_defaults[i].base.size);
+		map->grid = pathing_generate_wall_grid(map);
 	}
-}
-
-void map_remove_unit_meshes(MAP *map)
-{
-	uint64_t i;
-	for (i = 0; i < NUM_UNIT_DEFAULTS; ++i)
+	for (i = 0; i < NUM_UNIT_TYPES; ++i)
 	{
-		if (map->unit_meshes[i] != NULL)
-		{
-			pathing_destroy_mesh(map->unit_meshes[i]);
-			map->unit_meshes[i] = NULL;
-		}
-	}
-	if (map->grid != NULL)
-	{
-		pathing_destroy_wall_grid(map->grid);
+		map->meshes[i] = pathing_create_disconnected_mesh(map->grid, unit_defaults[i].base.size);
 	}
 }
 
@@ -810,7 +715,7 @@ void map_find_path(MAP *map, UNIT *unit, double x, double y)
 {
 	NODE_MESH *mesh = NULL;
 	WALL_GRID *grid;
-	uint64_t start, end;
+	//uint64_t start, end;
 
 	if (x < unit->base.size)
 	{
@@ -830,17 +735,22 @@ void map_find_path(MAP *map, UNIT *unit, double x, double y)
 	}
 
 	grid = map->grid;
-	mesh = map->unit_meshes[unit->type];
+	//pathing_draw_walls(grid);
 
-	start = pathing_node_mesh_insert(mesh, unit->base.x, unit->base.y, unit->base.size, grid);
-	end = pathing_node_mesh_insert(mesh, x, y, unit->base.size, grid);
+	mesh = map->meshes[unit->type];
 
-	//game_draw_nodes(game, mesh);
+	//pathing_draw_nodes(mesh);
 
-	pathing_find_path(mesh, unit, x, y);
+	//start = pathing_node_mesh_insert(mesh, unit->base.x, unit->base.y, unit->base.size, grid);
+	//end = pathing_node_mesh_insert(mesh, x, y, unit->base.size, grid);
 
-	//game_draw_unit_path(game, *unit);
+	//pathing_draw_nodes(mesh);
 
-	pathing_node_mesh_remove(mesh, start);
-	pathing_node_mesh_remove(mesh, end);
+	pathing_find_path(mesh, grid, unit, x, y);
+
+	// unravel from the end back
+	//pathing_node_mesh_remove(mesh, end);
+	//pathing_node_mesh_remove(mesh, start);
+
+	//pathing_draw_nodes(mesh);
 }

@@ -3,7 +3,14 @@
 
 #include <stdint.h>
 
-#define NUM_UNIT_DEFAULTS (2)
+#define UNIT_BASE_SIZE (
+
+typedef enum unit_type
+{
+	TYPE_TANK,
+	TYPE_GUNNER,
+	NUM_UNIT_TYPES
+} UNIT_TYPE;
 
 typedef struct unit_path UNIT_PATH;
 
@@ -13,12 +20,6 @@ struct unit_path
 	double x;
 	double y;
 };
-
-typedef enum unit_type
-{
-	TYPE_TANK,
-	TYPE_GUNNER
-} UNIT_TYPE;
 
 typedef struct unit_base
 {
@@ -38,36 +39,14 @@ typedef struct unit_base
 
 typedef struct unit_tank
 {
-	UNIT_TYPE type;
-	uint8_t selected;
-	UNIT_PATH *path;
-	double x, y;
-	double max_speed;
-	double speed;
-	double accel;
-	double size;
-	uint64_t max_health;
-	uint64_t health;
-	uint64_t attack;
-	uint64_t defense;
+	UNIT_BASE base;
 	uint64_t bullet_speed;
 	uint64_t accuracy;
 } UNIT_TANK;
 
 typedef struct unit_gunner
 {
-	UNIT_TYPE type;
-	uint8_t selected;
-	UNIT_PATH *path;
-	double x, y;
-	double max_speed;
-	double speed;
-	double accel;
-	double size;
-	uint64_t max_health;
-	uint64_t health;
-	uint64_t attack;
-	uint64_t defense;
+	UNIT_BASE base;
 	uint64_t bullet_speed;
 	uint64_t accuracy;
 } UNIT_GUNNER;
@@ -89,10 +68,10 @@ struct unit_list
 	UNIT unit;
 };
 
-const extern UNIT unit_defaults[NUM_UNIT_DEFAULTS];
+const extern UNIT unit_defaults[NUM_UNIT_TYPES];
 
-UNIT_BASE unit_create_base(double x, double y, double max_speed, double speed, double accel, double size, uint64_t max_health, uint64_t health, uint64_t attack, uint64_t defense);
-UNIT_GUNNER unit_create_gunner(UNIT_BASE base, uint64_t bullet_speed, uint64_t accuracy);
+UNIT unit_create_base(double x, double y, double max_speed, double speed, double accel, double size, uint64_t max_health, uint64_t health, uint64_t attack, uint64_t defense);
+UNIT unit_create_gunner(UNIT base, uint64_t bullet_speed, uint64_t accuracy);
 void unit_insert(UNIT_LIST **unit_list, UNIT_LIST **end, UNIT new_unit);
 
 void unit_msort_unit_list(UNIT_LIST **unit_list, UNIT_LIST **end);

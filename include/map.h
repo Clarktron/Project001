@@ -82,7 +82,6 @@ double map_get_unit_z(double x, double y, uint8_t corners);
 void map_update_units(MAP *map, UNIT_LIST *unit_list);
 uint8_t map_unit_is_on_tile(MAP *map, double unit_x, double unit_y, uint64_t tile_x, uint64_t tile_y, double radius);
 void map_set_unit_meshes(MAP *map);
-void map_remove_unit_meshes(MAP *map);
 void map_find_path(MAP *map, UNIT *unit, double x, double y);
 
 #endif

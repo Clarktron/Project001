@@ -41,11 +41,14 @@ typedef struct node_mesh
 } NODE_MESH;
 
 NODE_MESH *pathing_create_mesh(WALL_GRID *grid, double size);
+NODE_MESH *pathing_create_disconnected_mesh(WALL_GRID *grid, double size);
 void pathing_destroy_mesh(NODE_MESH *mesh);
-void pathing_find_path(NODE_MESH *mesh, UNIT *unit, double x_dest, double y_dest);
+void pathing_find_path(NODE_MESH *mesh, WALL_GRID *grid, UNIT *unit, double x_dest, double y_dest);
 uint64_t pathing_node_mesh_insert(NODE_MESH *mesh, double x, double y, double size, WALL_GRID *grid);
 void pathing_node_mesh_remove(NODE_MESH *mesh, uint64_t index);
 WALL_GRID *pathing_generate_wall_grid(MAP *map);
 void pathing_destroy_wall_grid(WALL_GRID *grid);
+void pathing_draw_walls(WALL_GRID *grid);
+void pathing_draw_nodes(NODE_MESH *mesh);
 
 #endif

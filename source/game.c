@@ -15,8 +15,8 @@
 
 #define NUM_UNITS (100)
 
-#define SCREEN_SPEED_X (8)
-#define SCREEN_SPEED_Y (4)
+#define SCREEN_SPEED_X (4)
+#define SCREEN_SPEED_Y (2)
 
 #define MAP_FILE_VERSION (0)
 
@@ -153,7 +153,7 @@ void _game_mouse_button_event_cb(SDL_MouseButtonEvent ev, void *ptr)
 			while (unit_list != NULL)
 			{
 				int32_t x, y;
-				game_unit_coords_to_screen_coords(game, unit_list->unit.base.x, unit_list->unit.base.y, &x, &y);
+				game_unit_coords_to_drawing_coords(game, unit_list->unit.base.x, unit_list->unit.base.y, &x, &y);
 				if (((x >= game->mouse.left_x && x <= game->mouse.cur_x) || (x >= game->mouse.cur_x && x <= game->mouse.left_x)) && ((y >= game->mouse.left_y && y <= game->mouse.cur_y) || (y >= game->mouse.cur_y && y <= game->mouse.left_y)))
 				{
 					unit_list->unit.base.selected = 1;
@@ -229,11 +229,11 @@ void _game_init(GAME *game, STATE *state, INPUT_S *input)
 
 	memset(game, 0, sizeof(GAME));
 
-	game->map = map_generate_random(40, 40);
+	//game->map = map_generate_random(20, 20);
 
-	/* load map from file
-	game->map = map_load(1);
-	//*/
+	// load map from file
+	game->map = map_load(3);
+	
 
 	// create blank map
 	//game->map = map_generate_blank(10, 10);
@@ -259,7 +259,7 @@ void _game_init(GAME *game, STATE *state, INPUT_S *input)
 	game->map[x + y * game->map_width].base.num_units++;
 	//*/
 
-	for (i = 0; i < 30; i++)
+	for (i = 0; i < 3; i++)
 	{
 		_game_create_unit_gunner(game, (system_rand() % (map_get_width(game->map) * 10)) / 10.0, (system_rand() % (map_get_height(game->map) * 10)) / 10.0);
 	}
@@ -325,8 +325,6 @@ void _game_post(GAME *game, STATE *state, INPUT_S *input)
 
 		unit_list = next;
 	}
-
-	map_remove_unit_meshes(game->map);
 
 	map_destroy(game->map);
 }
@@ -498,8 +496,7 @@ void _game_create_unit_gunner(GAME *game, double x, double y)
 	UNIT unit;
 
 	// --- //
-	unit.base = unit_create_base(x, y, 0.015, 0.0, 0.1, 0.1, 100, 100, 2, 2);
-	unit.gunner = unit_create_gunner(unit.base, 10, 75);
+	unit = unit_create_gunner(unit_create_base(x, y, 0.1, 0.0, 0.1, 0.1, 100, 100, 2, 2), 10, 75);
 	// --- //
 
 	_game_create_unit(game, unit);
@@ -543,24 +540,5 @@ void game_draw_nodes(GAME *game, void *mesh)
 		char str[5];
 		sprintf_s(str, 5, "%llu", i);
 		render_draw_text(x, y, str, 2, 0x7F, 0x00, 0x00, 0xFF, ALIGN_CENTER, ALIGN_CENTER, QUALITY_BEST, 1);
-	}
-}
-
-void game_draw_unit_path(GAME *game, UNIT unit)
-{
-	UNIT_PATH *follower = unit.base.path;
-	int32_t x1, y1;
-	game_unit_coords_to_screen_coords(game, unit.base.x, unit.base.y, &x1, &y1);
-	render_circle(x1, y1, 5, 0x00, 0x00, 0x00, 1);
-
-	while (follower != NULL)
-	{
-		int32_t x2, y2;
-		game_unit_coords_to_screen_coords(game, follower->x, follower->y, &x2, &y2);
-		render_circle(x2, y2, 5, 0x00, 0x00, 0x00, 1);
-		render_line(x1, y1, x2, y2, 0x00, 0x00, 0x00, 1);
-		x1 = x2;
-		y1 = y2;
-		follower = follower->next;
 	}
 }

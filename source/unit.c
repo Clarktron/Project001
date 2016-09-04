@@ -7,59 +7,59 @@
 
 #define SQRT_RIGHT_ANGLE_TRI (0.70710678)
 
-const UNIT unit_defaults[NUM_UNIT_DEFAULTS] =
+const UNIT unit_defaults[NUM_UNIT_TYPES] =
 {
 	{
-		.tank = { TYPE_GUNNER, 0, NULL, 0.0, 0.0, 0.015, 0.0, 0.1, 0.1, 100, 100, 2, 2, 10, 75}
+		.tank = {{TYPE_TANK, 0, NULL, 0.0, 0.0, 0.015, 0.0, 0.1, 0.1, 100, 100, 2, 2}, 0.5, 0.9}
 	},
 	{
-		.gunner = {TYPE_GUNNER, 0, NULL, 0.0, 0.0, 0.015, 0.0, 0.1, 0.1, 100, 100, 2, 2, 10, 75}
+		.gunner = {{TYPE_GUNNER, 0, NULL, 0.0, 0.0, 0.015, 0.0, 0.1, 0.1, 100, 100, 2, 2}, 0.5, 0.9}
 	}
 };
 
 UNIT_LIST *_unit_msort_unit_list_compare(UNIT_LIST *first, UNIT_LIST *second);
 UNIT_LIST *_unit_msort_unit_list_merge(UNIT_LIST *first, UNIT_LIST *second);
 
-UNIT_BASE unit_create_base(double x, double y, double max_speed, double speed, double accel, double size, uint64_t max_health, uint64_t health, uint64_t attack, uint64_t defense)
+UNIT unit_create_base(double x, double y, double max_speed, double speed, double accel, double size, uint64_t max_health, uint64_t health, uint64_t attack, uint64_t defense)
 {
-	UNIT_BASE new_unit;
+	UNIT new_unit;
 
-	new_unit.selected = 0;
-	new_unit.path = NULL;
-	new_unit.x = x;
-	new_unit.y = y;
-	new_unit.max_speed = max_speed;
-	new_unit.speed = speed;
-	new_unit.accel = accel;
-	new_unit.size = size;
-	new_unit.max_health = max_health;
-	new_unit.health = health;
-	new_unit.attack = attack;
-	new_unit.defense = defense;
+	new_unit.base.selected = 0;
+	new_unit.base.path = NULL;
+	new_unit.base.x = x;
+	new_unit.base.y = y;
+	new_unit.base.max_speed = max_speed;
+	new_unit.base.speed = speed;
+	new_unit.base.accel = accel;
+	new_unit.base.size = size;
+	new_unit.base.max_health = max_health;
+	new_unit.base.health = health;
+	new_unit.base.attack = attack;
+	new_unit.base.defense = defense;
 
 	return new_unit;
 }
 
-UNIT_GUNNER unit_create_gunner(UNIT_BASE base, uint64_t bullet_speed, uint64_t accuracy)
+UNIT unit_create_gunner(UNIT base, uint64_t bullet_speed, uint64_t accuracy)
 {
-	UNIT_GUNNER new_unit;
+	UNIT new_unit;
 
-	new_unit.selected = base.selected;
-	new_unit.path = base.path;
-	new_unit.x = base.x;
-	new_unit.y = base.y;
-	new_unit.max_speed = base.max_speed;
-	new_unit.speed = base.speed;
-	new_unit.accel = base.accel;
-	new_unit.size = base.size;
-	new_unit.max_health = base.max_health;
-	new_unit.health = base.health;
-	new_unit.attack = base.attack;
-	new_unit.defense = base.defense;
+	new_unit.base.selected = base.base.selected;
+	new_unit.base.path = base.base.path;
+	new_unit.base.x = base.base.x;
+	new_unit.base.y = base.base.y;
+	new_unit.base.max_speed = base.base.max_speed;
+	new_unit.base.speed = base.base.speed;
+	new_unit.base.accel = base.base.accel;
+	new_unit.base.size = base.base.size;
+	new_unit.base.max_health = base.base.max_health;
+	new_unit.base.health = base.base.health;
+	new_unit.base.attack = base.base.attack;
+	new_unit.base.defense = base.base.defense;
 
 	new_unit.type = TYPE_GUNNER;
-	new_unit.bullet_speed = bullet_speed;
-	new_unit.accuracy = accuracy;
+	new_unit.gunner.bullet_speed = bullet_speed;
+	new_unit.gunner.accuracy = accuracy;
 
 	return new_unit;
 }
