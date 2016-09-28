@@ -177,6 +177,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PLATFORM_DEBUG;PLATFORM_X64;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -191,6 +193,8 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PLATFORM_RELEASE;PLATFORM_X64;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -231,32 +235,40 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PLATFORM_RELEASE;PLATFORM_X64;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
     </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Opt|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PLATFORM_DEBUG;PLATFORM_X64;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -404,41 +416,53 @@
     <None Include="resources\0001.pmap" />
     <None Include="resources\0002.pmap" />
     <None Include="resources\0003.pmap" />
+    <None Include="Win32\Debug Nowindow\libfreetype-6.dll" />
+    <None Include="Win32\Debug Nowindow\libjpeg-9.dll" />
+    <None Include="Win32\Debug Nowindow\libpng16-16.dll" />
+    <None Include="Win32\Debug Nowindow\libtiff-5.dll" />
+    <None Include="Win32\Debug Nowindow\libwebp-4.dll" />
+    <None Include="Win32\Debug Nowindow\zlib1.dll" />
+    <None Include="Win32\Debug Opt\libfreetype-6.dll" />
+    <None Include="Win32\Debug Opt\libjpeg-9.dll" />
+    <None Include="Win32\Debug Opt\libpng16-16.dll" />
+    <None Include="Win32\Debug Opt\libtiff-5.dll" />
+    <None Include="Win32\Debug Opt\libwebp-4.dll" />
+    <None Include="Win32\Debug Opt\zlib1.dll" />
     <None Include="Win32\Debug\libfreetype-6.dll" />
     <None Include="Win32\Debug\libjpeg-9.dll" />
     <None Include="Win32\Debug\libpng16-16.dll" />
     <None Include="Win32\Debug\libtiff-5.dll" />
     <None Include="Win32\Debug\libwebp-4.dll" />
-    <None Include="Win32\Debug\SDL2.dll" />
-    <None Include="Win32\Debug\SDL2_image.dll" />
-    <None Include="Win32\Debug\SDL2_ttf.dll" />
     <None Include="Win32\Debug\zlib1.dll" />
     <None Include="Win32\Release\libfreetype-6.dll" />
     <None Include="Win32\Release\libjpeg-9.dll" />
     <None Include="Win32\Release\libpng16-16.dll" />
     <None Include="Win32\Release\libtiff-5.dll" />
     <None Include="Win32\Release\libwebp-4.dll" />
-    <None Include="Win32\Release\SDL2.dll" />
-    <None Include="Win32\Release\SDL2_image.dll" />
-    <None Include="Win32\Release\SDL2_ttf.dll" />
     <None Include="Win32\Release\zlib1.dll" />
+    <None Include="x64\Debug Nowindow\libfreetype-6.dll" />
+    <None Include="x64\Debug Nowindow\libjpeg-9.dll" />
+    <None Include="x64\Debug Nowindow\libpng16-16.dll" />
+    <None Include="x64\Debug Nowindow\libtiff-5.dll" />
+    <None Include="x64\Debug Nowindow\libwebp-4.dll" />
+    <None Include="x64\Debug Nowindow\zlib1.dll" />
+    <None Include="x64\Debug Opt\libfreetype-6.dll" />
+    <None Include="x64\Debug Opt\libjpeg-9.dll" />
+    <None Include="x64\Debug Opt\libpng16-16.dll" />
+    <None Include="x64\Debug Opt\libtiff-5.dll" />
+    <None Include="x64\Debug Opt\libwebp-4.dll" />
+    <None Include="x64\Debug Opt\zlib1.dll" />
     <None Include="x64\Debug\libfreetype-6.dll" />
     <None Include="x64\Debug\libjpeg-9.dll" />
     <None Include="x64\Debug\libpng16-16.dll" />
     <None Include="x64\Debug\libtiff-5.dll" />
     <None Include="x64\Debug\libwebp-4.dll" />
-    <None Include="x64\Debug\SDL2.dll" />
-    <None Include="x64\Debug\SDL2_image.dll" />
-    <None Include="x64\Debug\SDL2_ttf.dll" />
     <None Include="x64\Debug\zlib1.dll" />
     <None Include="x64\Release\libfreetype-6.dll" />
     <None Include="x64\Release\libjpeg-9.dll" />
     <None Include="x64\Release\libpng16-16.dll" />
     <None Include="x64\Release\libtiff-5.dll" />
     <None Include="x64\Release\libwebp-4.dll" />
-    <None Include="x64\Release\SDL2.dll" />
-    <None Include="x64\Release\SDL2_image.dll" />
-    <None Include="x64\Release\SDL2_ttf.dll" />
     <None Include="x64\Release\zlib1.dll" />
   </ItemGroup>
   <ItemGroup>

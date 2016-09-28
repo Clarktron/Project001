@@ -229,10 +229,10 @@ void _game_init(GAME *game, STATE *state, INPUT_S *input)
 
 	memset(game, 0, sizeof(GAME));
 
-	//game->map = map_generate_random(20, 20);
+	game->map = map_generate_random(50, 50);
 
 	// load map from file
-	game->map = map_load(3);
+	//game->map = map_load(3);
 	
 
 	// create blank map
@@ -496,7 +496,9 @@ void _game_create_unit_gunner(GAME *game, double x, double y)
 	UNIT unit;
 
 	// --- //
-	unit = unit_create_gunner(unit_create_base(x, y, 0.1, 0.0, 0.1, 0.1, 100, 100, 2, 2), 10, 75);
+	unit = unit_defaults[TYPE_GUNNER];
+	unit.base.x = x;
+	unit.base.y = y;
 	// --- //
 
 	_game_create_unit(game, unit);

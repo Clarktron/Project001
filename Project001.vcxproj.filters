@@ -45,6 +45,18 @@
     <Filter Include="resources">
       <UniqueIdentifier>{ab82e623-3972-4af9-9abc-267c25ab694c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Win32\Debug Opt">
+      <UniqueIdentifier>{c5a5833a-2e44-4ad0-9203-caf7db3426b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Win32\Debug Nowindow">
+      <UniqueIdentifier>{db5a021b-ea43-404c-a5ef-5d62612d5b80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="x64\Debug Opt">
+      <UniqueIdentifier>{392b1017-febf-44f6-a8fa-0810ce2c468f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="x64\Debug Nowindow">
+      <UniqueIdentifier>{03754625-3d27-4a95-974d-a3ab43e49032}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.c">
@@ -330,22 +342,10 @@
     <None Include="x64\Debug\libfreetype-6.dll">
       <Filter>x64\Debug</Filter>
     </None>
-    <None Include="x64\Debug\SDL2.dll">
-      <Filter>x64\Debug</Filter>
-    </None>
-    <None Include="x64\Debug\SDL2_ttf.dll">
-      <Filter>x64\Debug</Filter>
-    </None>
     <None Include="x64\Debug\zlib1.dll">
       <Filter>x64\Debug</Filter>
     </None>
     <None Include="x64\Release\libfreetype-6.dll">
-      <Filter>x64\Release</Filter>
-    </None>
-    <None Include="x64\Release\SDL2.dll">
-      <Filter>x64\Release</Filter>
-    </None>
-    <None Include="x64\Release\SDL2_ttf.dll">
       <Filter>x64\Release</Filter>
     </None>
     <None Include="x64\Release\zlib1.dll">
@@ -354,22 +354,10 @@
     <None Include="Win32\Debug\libfreetype-6.dll">
       <Filter>Win32\Debug</Filter>
     </None>
-    <None Include="Win32\Debug\SDL2.dll">
-      <Filter>Win32\Debug</Filter>
-    </None>
-    <None Include="Win32\Debug\SDL2_ttf.dll">
-      <Filter>Win32\Debug</Filter>
-    </None>
     <None Include="Win32\Debug\zlib1.dll">
       <Filter>Win32\Debug</Filter>
     </None>
     <None Include="Win32\Release\libfreetype-6.dll">
-      <Filter>Win32\Release</Filter>
-    </None>
-    <None Include="Win32\Release\SDL2.dll">
-      <Filter>Win32\Release</Filter>
-    </None>
-    <None Include="Win32\Release\SDL2_ttf.dll">
       <Filter>Win32\Release</Filter>
     </None>
     <None Include="Win32\Release\zlib1.dll">
@@ -393,9 +381,6 @@
     <None Include="Win32\Debug\libwebp-4.dll">
       <Filter>Win32\Debug</Filter>
     </None>
-    <None Include="Win32\Debug\SDL2_image.dll">
-      <Filter>Win32\Debug</Filter>
-    </None>
     <None Include="Win32\Release\libjpeg-9.dll">
       <Filter>Win32\Release</Filter>
     </None>
@@ -406,9 +391,6 @@
       <Filter>Win32\Release</Filter>
     </None>
     <None Include="Win32\Release\libwebp-4.dll">
-      <Filter>Win32\Release</Filter>
-    </None>
-    <None Include="Win32\Release\SDL2_image.dll">
       <Filter>Win32\Release</Filter>
     </None>
     <None Include="x64\Debug\libjpeg-9.dll">
@@ -423,9 +405,6 @@
     <None Include="x64\Debug\libwebp-4.dll">
       <Filter>x64\Debug</Filter>
     </None>
-    <None Include="x64\Debug\SDL2_image.dll">
-      <Filter>x64\Debug</Filter>
-    </None>
     <None Include="x64\Release\libjpeg-9.dll">
       <Filter>x64\Release</Filter>
     </None>
@@ -438,14 +417,83 @@
     <None Include="x64\Release\libwebp-4.dll">
       <Filter>x64\Release</Filter>
     </None>
-    <None Include="x64\Release\SDL2_image.dll">
-      <Filter>x64\Release</Filter>
-    </None>
     <None Include="resources\0002.pmap">
       <Filter>resources</Filter>
     </None>
     <None Include="resources\0003.pmap">
       <Filter>resources</Filter>
+    </None>
+    <None Include="x64\Debug Nowindow\libfreetype-6.dll">
+      <Filter>x64\Debug Nowindow</Filter>
+    </None>
+    <None Include="x64\Debug Nowindow\libjpeg-9.dll">
+      <Filter>x64\Debug Nowindow</Filter>
+    </None>
+    <None Include="x64\Debug Nowindow\libpng16-16.dll">
+      <Filter>x64\Debug Nowindow</Filter>
+    </None>
+    <None Include="x64\Debug Nowindow\libtiff-5.dll">
+      <Filter>x64\Debug Nowindow</Filter>
+    </None>
+    <None Include="x64\Debug Nowindow\libwebp-4.dll">
+      <Filter>x64\Debug Nowindow</Filter>
+    </None>
+    <None Include="x64\Debug Opt\libfreetype-6.dll">
+      <Filter>x64\Debug Opt</Filter>
+    </None>
+    <None Include="x64\Debug Opt\libjpeg-9.dll">
+      <Filter>x64\Debug Opt</Filter>
+    </None>
+    <None Include="x64\Debug Opt\libpng16-16.dll">
+      <Filter>x64\Debug Opt</Filter>
+    </None>
+    <None Include="x64\Debug Opt\libtiff-5.dll">
+      <Filter>x64\Debug Opt</Filter>
+    </None>
+    <None Include="x64\Debug Opt\libwebp-4.dll">
+      <Filter>x64\Debug Opt</Filter>
+    </None>
+    <None Include="Win32\Debug Nowindow\libfreetype-6.dll">
+      <Filter>Win32\Debug Nowindow</Filter>
+    </None>
+    <None Include="Win32\Debug Nowindow\libjpeg-9.dll">
+      <Filter>Win32\Debug Nowindow</Filter>
+    </None>
+    <None Include="Win32\Debug Nowindow\libpng16-16.dll">
+      <Filter>Win32\Debug Nowindow</Filter>
+    </None>
+    <None Include="Win32\Debug Nowindow\libtiff-5.dll">
+      <Filter>Win32\Debug Nowindow</Filter>
+    </None>
+    <None Include="Win32\Debug Nowindow\libwebp-4.dll">
+      <Filter>Win32\Debug Nowindow</Filter>
+    </None>
+    <None Include="Win32\Debug Nowindow\zlib1.dll">
+      <Filter>Win32\Debug Nowindow</Filter>
+    </None>
+    <None Include="Win32\Debug Opt\libfreetype-6.dll">
+      <Filter>Win32\Debug Opt</Filter>
+    </None>
+    <None Include="Win32\Debug Opt\libjpeg-9.dll">
+      <Filter>Win32\Debug Opt</Filter>
+    </None>
+    <None Include="Win32\Debug Opt\libpng16-16.dll">
+      <Filter>Win32\Debug Opt</Filter>
+    </None>
+    <None Include="Win32\Debug Opt\libtiff-5.dll">
+      <Filter>Win32\Debug Opt</Filter>
+    </None>
+    <None Include="Win32\Debug Opt\libwebp-4.dll">
+      <Filter>Win32\Debug Opt</Filter>
+    </None>
+    <None Include="Win32\Debug Opt\zlib1.dll">
+      <Filter>Win32\Debug Opt</Filter>
+    </None>
+    <None Include="x64\Debug Nowindow\zlib1.dll">
+      <Filter>x64\Debug Nowindow</Filter>
+    </None>
+    <None Include="x64\Debug Opt\zlib1.dll">
+      <Filter>x64\Debug Opt</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
