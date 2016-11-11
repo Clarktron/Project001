@@ -2,6 +2,7 @@
 #include "log.h"
 #include "render.h"
 #include "unit.h"
+#include "building.h"
 #include "system.h"
 #include "pathing.h"
 
@@ -19,7 +20,7 @@ struct map
 	uint64_t map_width;
 	uint64_t map_height;
 	WALL_GRID *grid;
-	NODE_MESH *meshes[NUM_UNIT_TYPES];
+	NODE_MESH *mesh;
 };
 
 uint8_t _map_corners_to_index(uint8_t corners);
@@ -314,6 +315,10 @@ void map_destroy(MAP *map)
 		{
 			free(map->map);
 		}
+		if (map->mesh != NULL)
+		{
+			free(map->mesh);
+		}
 		free(map);
 	}
 }
@@ -357,11 +362,12 @@ TILE map_get_tile(MAP *map, uint64_t x, uint64_t y)
 	return map->map[x + y * map->map_width];
 }
 
-void map_draw(MAP *map, UNIT_LIST *list, int32_t x_off, int32_t y_off)
+void map_draw(MAP *map, UNIT_LIST *unit_list, BUILDING_LIST *building_list, int32_t x_off, int32_t y_off)
 {
 	uint64_t i, j, k, l, m;
 	uint64_t max;
-	UNIT_LIST *top = NULL;
+	UNIT_LIST *unit_top = NULL;
+	BUILDING_LIST *building_top = NULL;
 
 	if (map->map_height == 0 || map->map_width == 0)
 	{
@@ -377,7 +383,8 @@ void map_draw(MAP *map, UNIT_LIST *list, int32_t x_off, int32_t y_off)
 	}
 
 	//uint32_t count = 0;
-	top = list;
+	unit_top = unit_list;
+	building_top = building_list;
 	for (l = 0; l < map->map_height + map->map_width - 1; ++l)
 	{
 		for (k = 0; k < max && k < l + 1 && k < map->map_height + map->map_width - l - 1; k++)
@@ -399,14 +406,35 @@ void map_draw(MAP *map, UNIT_LIST *list, int32_t x_off, int32_t y_off)
 			{
 				map_draw_tile(map->map[index], x - x_off, y - y_off, map->map[index].base.elevation);
 			}
-			for (m = 0; m < map->map[index].base.num_units; ++m)
+			for (m = 0; m < map->map[index].base.num_buildings; ++m)
 			{
-				if (top == NULL)
+				if (building_top == NULL)
 				{
 					break;
 				}
-				double unit_x = top->unit.base.x;
-				double unit_y = top->unit.base.y;
+				uint32_t building_x = building_top->building.base.x;
+				uint32_t building_y = building_top->building.base.y;
+
+				int32_t x_coord, y_coord;
+				map_unit_coords_to_drawing_coords(map, building_x, building_y, &x_coord, &y_coord);
+				x_coord -= x_off;
+				y_coord -= y_off;
+
+				if (x_coord + BUILDING_WIDTH >= 0 && y_coord + BUILDING_HEIGHT >= 0 && x_coord - BUILDING_WIDTH < SCREEN_WIDTH && y_coord - BUILDING_HEIGHT < SCREEN_HEIGHT)
+				{
+					render_draw_building(0, x_coord, y_coord);
+				}
+
+				building_top = building_top->next;
+			}
+			for (m = 0; m < map->map[index].base.num_units; ++m)
+			{
+				if (unit_top == NULL)
+				{
+					break;
+				}
+				double unit_x = unit_top->unit.base.x;
+				double unit_y = unit_top->unit.base.y;
 
 				int32_t x_coord, y_coord;
 				map_unit_coords_to_drawing_coords(map, unit_x, unit_y, &x_coord, &y_coord);
@@ -422,18 +450,18 @@ void map_draw(MAP *map, UNIT_LIST *list, int32_t x_off, int32_t y_off)
 				//sprintf(str, "%lu", count++);
 				//render_draw_text(x_coord, y_coord, str, 1, 0x56, 0xB8, 0xFF, 0xFF, ALIGN_CENTER, ALIGN_TOP, QUALITY_BEST, 0);
 				
-				top = top->next;
+				unit_top = unit_top->next;
 			}
 		}
 	}
-	
-	top = list;
-	while (top != NULL)
+
+	unit_top = unit_list;
+	while (unit_top != NULL)
 	{
-		if (top->unit.base.selected)
+		if (unit_top->unit.base.selected)
 		{
-			double unit_x = top->unit.base.x;
-			double unit_y = top->unit.base.y;
+			double unit_x = unit_top->unit.base.x;
+			double unit_y = unit_top->unit.base.y;
 
 			int32_t x_coord, y_coord;
 			map_unit_coords_to_drawing_coords(map, unit_x, unit_y, &x_coord, &y_coord);
@@ -442,7 +470,25 @@ void map_draw(MAP *map, UNIT_LIST *list, int32_t x_off, int32_t y_off)
 
 			render_draw_unit(1, x_coord, y_coord);
 		}
-		top = top->next;
+		unit_top = unit_top->next;
+	}
+
+	building_top = building_list;
+	while (building_top != NULL)
+	{
+		if (building_top->building.base.selected)
+		{
+			uint32_t building_x = building_top->building.base.x;
+			uint32_t building_y = building_top->building.base.y;
+
+			int32_t x_coord, y_coord;
+			map_unit_coords_to_drawing_coords(map, building_x, building_y, &x_coord, &y_coord);
+			x_coord -= x_off;
+			y_coord -= y_off;
+
+			render_draw_building(1, x_coord, y_coord);
+		}
+		building_top = building_top->next;
 	}
 }
 
@@ -649,6 +695,28 @@ void map_update_units(MAP *map, UNIT_LIST *unit_list)
 	}
 }
 
+void map_update_buildings(MAP *map, BUILDING_LIST *building_list)
+{
+	BUILDING_LIST *follower = building_list;
+	uint64_t i, j;
+
+	for (j = 0; j < map->map_height; ++j)
+	{
+		for (i = 0; i < map->map_width; ++i)
+		{
+			map->map[i + j * map->map_width].base.num_buildings = 0;
+		}
+	}
+
+	while (follower != NULL)
+	{
+		uint32_t x = follower->building.base.x;
+		uint32_t y = follower->building.base.y;
+		map->map[x + y * map->map_width].base.num_buildings++;
+		follower = follower->next;
+	}
+}
+
 uint8_t map_unit_is_on_tile(MAP *map, double unit_x, double unit_y, uint64_t tile_x, uint64_t tile_y, double radius)
 {
 	uint64_t current_x;
@@ -698,16 +766,15 @@ uint8_t map_unit_is_on_tile(MAP *map, double unit_x, double unit_y, uint64_t til
 	return 1;
 }
 
-void map_set_unit_meshes(MAP *map)
+void map_set_unit_meshes(MAP *map, UNIT_TYPE type)
 {
-	uint64_t i;
 	if (map->grid == NULL)
 	{
 		map->grid = pathing_generate_wall_grid(map);
 	}
-	for (i = 0; i < NUM_UNIT_TYPES; ++i)
+	if (map->mesh == NULL)
 	{
-		map->meshes[i] = pathing_create_disconnected_mesh(map->grid, unit_defaults[i].base.size);
+		map->mesh = pathing_create_disconnected_mesh(map->grid, unit_defaults[type].base.size);
 	}
 }
 
@@ -734,10 +801,12 @@ void map_find_path(MAP *map, UNIT *unit, double x, double y)
 		y = (double)map_get_height(map) - unit->base.size - NODE_OFFSET_CONTACT;
 	}
 
+	map_set_unit_meshes(map, unit->type);
+
 	grid = map->grid;
 	//pathing_draw_walls(grid);
 
-	mesh = map->meshes[unit->type];
+	mesh = map->mesh;
 
 	//pathing_draw_nodes(mesh);
 
@@ -753,4 +822,29 @@ void map_find_path(MAP *map, UNIT *unit, double x, double y)
 	//pathing_node_mesh_remove(mesh, start);
 
 	//pathing_draw_nodes(mesh);
+}
+
+void map_add_node(MAP *map, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
+{
+	uint64_t i;
+	for (i = 0; i < NUM_UNIT_TYPES; ++i)
+	{
+		NODE_MESH *mesh = map->mesh;
+		WALL_GRID *grid = map->grid;
+		double x1, x2, y1, y2;
+		double size = unit_defaults[i].base.size;
+
+		if (mesh != NULL)
+		{
+			x1 = (double)x - size;
+			y1 = (double)y - size;
+			x2 = (double)(x + w) + size;
+			y2 = (double)(y + w) + size;
+
+			pathing_node_mesh_insert(mesh, x1, y1, size, grid);
+			pathing_node_mesh_insert(mesh, x2, y1, size, grid);
+			pathing_node_mesh_insert(mesh, x1, y2, size, grid);
+			pathing_node_mesh_insert(mesh, x2, y2, size, grid);
+		}
+	}
 }

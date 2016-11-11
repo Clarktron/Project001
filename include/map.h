@@ -5,6 +5,7 @@
 
 #include "render.h"
 #include "unit.h"
+#include "building.h"
 
 //#define NODE_OFFSET_DRAWING (0.1)
 
@@ -46,6 +47,7 @@ typedef struct tile_base
 	uint32_t elevation;
 	uint8_t corners; // 0000 | LURD
 	uint64_t num_units;
+	uint64_t num_buildings;
 } TILE_BASE;
 
 typedef union tile
@@ -74,14 +76,16 @@ uint64_t map_get_height(MAP *map);
 uint32_t map_get_elevation(MAP *map, uint64_t x, uint64_t y);
 uint8_t map_get_corners(MAP *map, uint64_t x, uint64_t y);
 TILE map_get_tile(MAP *map, uint64_t x, uint64_t y);
-void map_draw(MAP *map, UNIT_LIST *list, int32_t x_off, int32_t y_off);
+void map_draw(MAP *map, UNIT_LIST *unit_list, BUILDING_LIST *building_list, int32_t x_off, int32_t y_off);
 void map_unit_coords_to_drawing_coords(MAP *map, double unit_x, double unit_y, int32_t *screen_x, int32_t *screen_y);
 void map_unit_coords_to_logical_coords(double unit_x, double unit_y, int32_t *screen_x, int32_t *screen_y);
 void map_logical_coords_to_unit_coords(int32_t screen_x, int32_t screen_y, double *unit_x, double *unit_y);
 double map_get_unit_z(double x, double y, uint8_t corners);
 void map_update_units(MAP *map, UNIT_LIST *unit_list);
+void map_update_buildings(MAP *map, BUILDING_LIST *building_list);
 uint8_t map_unit_is_on_tile(MAP *map, double unit_x, double unit_y, uint64_t tile_x, uint64_t tile_y, double radius);
 void map_set_unit_meshes(MAP *map);
 void map_find_path(MAP *map, UNIT *unit, double x, double y);
+void map_add_node(MAP *map, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
 
 #endif

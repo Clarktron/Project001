@@ -26,6 +26,7 @@ typedef struct render
 	uint32_t frame_tick;
 	SDL_Texture *slopes;
 	SDL_Texture *units;
+	SDL_Texture *buildings;
 	FONT font_list[NUM_FONTS];
 } RENDER_S;
 
@@ -96,6 +97,13 @@ void render_setup()
 		goto render_setup_error_7;
 	}
 
+	render->buildings = IMG_LoadTexture(render->renderer, "resources\\buildings.png");
+	if (render->buildings == NULL)
+	{
+		log_output("render: Failed to load buildings\n");
+		goto render_setup_error_8;
+	}
+
 	for (i = 0; i < NUM_FONTS; ++i)
 	{
 		render->font_list[i].font = TTF_OpenFont(render->font_list[i].path, render->font_list[i].size);
@@ -112,6 +120,8 @@ void render_setup()
 	log_output("render: Setup complete\n");
 	return;
 
+render_setup_error_8:
+	SDL_DestroyTexture(render->units);
 render_setup_error_7:
 	SDL_DestroyTexture(render->slopes);
 render_setup_error_6:
@@ -348,6 +358,26 @@ void render_draw_unit(uint8_t index, int32_t x, int32_t y)
 	src.y = (index / 4) * h;
 
 	SDL_RenderCopy(render->renderer, render->units, &src, &dst);
+}
+
+void render_draw_building(uint8_t index, int32_t x, int32_t y)
+{
+	int32_t w = BUILDING_WIDTH, h = BUILDING_HEIGHT;
+	SDL_Rect src;
+	src.x = 0;
+	src.y = 0;
+	src.w = w;
+	src.h = h;
+	SDL_Rect dst;
+	dst.x = x;
+	dst.y = y - BUILDING_HEIGHT / 2;
+	dst.w = w;
+	dst.h = h;
+
+	src.x = (index % 4) * w;
+	src.y = (index / 4) * h;
+
+	SDL_RenderCopy(render->renderer, render->buildings, &src, &dst);
 }
 
 void render_begin_frame()

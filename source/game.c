@@ -6,6 +6,7 @@
 #include "menu.h"
 #include "unit.h"
 #include "pathing.h"
+#include "building.h"
 
 #include <stdio.h>
 #include <stdint.h>
@@ -48,6 +49,9 @@ struct game
 	UNIT_LIST *unit_list;
 	UNIT_LIST *unit_list_end;
 	uint64_t num_units;
+	BUILDING_LIST *building_list;
+	BUILDING_LIST *building_list_end;
+	uint64_t num_buildings;
 	MAP *map;
 	uint8_t quit;
 };
@@ -65,6 +69,9 @@ void _game_create_unit(GAME *game, UNIT unit);
 void _game_create_unit_gunner(GAME *game, double x, double y);
 void _game_unit_path_update(GAME *game);
 void _game_pathfind(GAME *game, UNIT *unit, double x, double y);
+
+void _game_create_building(GAME *game, BUILDING building);
+void _game_create_building_house(GAME *game, uint32_t x, uint32_t y);
 
 void game_loop(MENU_S *menu)
 {
@@ -229,14 +236,14 @@ void _game_init(GAME *game, STATE *state, INPUT_S *input)
 
 	memset(game, 0, sizeof(GAME));
 
-	game->map = map_generate_random(50, 50);
+	//game->map = map_generate_random(50, 50);
 
 	// load map from file
 	//game->map = map_load(3);
 	
 
 	// create blank map
-	//game->map = map_generate_blank(10, 10);
+	game->map = map_generate_blank(10, 10);
 	
 	game->x_offset = (int32_t)((map_get_width(game->map) * (TILE_WIDTH / 2) + map_get_height(game->map) * (TILE_WIDTH / 2)) / 2 - (SCREEN_WIDTH / 2));
 	game->y_offset = (int32_t)(-1 * (SCREEN_HEIGHT / 2) + (map_get_height(game->map) * (TILE_HEIGHT / 2) - map_get_width(game->map) * (TILE_HEIGHT / 2)) / 2);
@@ -264,6 +271,10 @@ void _game_init(GAME *game, STATE *state, INPUT_S *input)
 		_game_create_unit_gunner(game, (system_rand() % (map_get_width(game->map) * 10)) / 10.0, (system_rand() % (map_get_height(game->map) * 10)) / 10.0);
 	}
 
+	map_set_unit_meshes(game->map);
+
+	_game_create_building_house(game, 2, 2);
+
 	/*
 	double scale_x = 10;
 	double scale_y = 10;
@@ -275,8 +286,6 @@ void _game_init(GAME *game, STATE *state, INPUT_S *input)
 		}
 	}
 	//*/
-
-	map_set_unit_meshes(game->map);
 }
 
 void _game_play(GAME *game, STATE *state)
@@ -285,10 +294,12 @@ void _game_play(GAME *game, STATE *state)
 	_game_scroll(game);
 
 	unit_msort_unit_list(&(game->unit_list), &(game->unit_list_end));
+	building_msort_building_list(&(game->building_list), &(game->building_list_end));
 	_game_unit_path_update(game);
 
 	map_update_units(game->map, game->unit_list);
-	map_draw(game->map, game->unit_list, game->x_offset, game->y_offset);
+	map_update_buildings(game->map, game->building_list);
+	map_draw(game->map, game->unit_list, game->building_list, game->x_offset, game->y_offset);
 	_game_draw_mouse(game);
 
 	if (game->quit)
@@ -485,9 +496,6 @@ void game_screen_coords_to_unit_coords(GAME *game, int32_t screen_x, int32_t scr
 
 void _game_create_unit(GAME *game, UNIT unit)
 {
-	int32_t x_grid, y_grid;
-	x_grid = (int32_t)unit.base.x;
-	y_grid = (int32_t)unit.base.y;
 	unit_insert(&(game->unit_list), &(game->unit_list_end), unit);
 }
 
@@ -522,10 +530,10 @@ void _game_pathfind(GAME *game, UNIT *unit, double x, double y)
 	map_find_path(game->map, unit, x, y);
 }
 
-void game_draw_nodes(GAME *game, void *mesh)
+void game_draw_nodes(GAME *game, NODE_MESH *mesh)
 {
 	uint64_t i, j;
-	NODE_MESH *node_mesh = (NODE_MESH *)mesh;
+	NODE_MESH *node_mesh = mesh;
 
 	for (i = 0; i < node_mesh->mesh_size; i++)
 	{
@@ -543,4 +551,22 @@ void game_draw_nodes(GAME *game, void *mesh)
 		sprintf_s(str, 5, "%llu", i);
 		render_draw_text(x, y, str, 2, 0x7F, 0x00, 0x00, 0xFF, ALIGN_CENTER, ALIGN_CENTER, QUALITY_BEST, 1);
 	}
+}
+
+void _game_create_building(GAME *game, BUILDING building)
+{
+	building_insert(&(game->building_list), &(game->building_list_end), building);
+}
+
+void _game_create_building_house(GAME *game, uint32_t x, uint32_t y)
+{
+	BUILDING building;
+
+	building = building_defaults[TYPE_HOUSE];
+	building.base.x = x;
+	building.base.y = y;
+
+	_game_create_building(game, building);
+
+	map_add_node(game->map, x, y, 1, 1);
 }

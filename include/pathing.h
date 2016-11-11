@@ -12,7 +12,7 @@
 typedef struct connector
 {
 	uint64_t index;
-	double dist;
+	DIM dist;
 } CONNECTOR;
 
 typedef struct node
@@ -20,10 +20,10 @@ typedef struct node
 	CONNECTOR *los_nodes;
 	uint64_t los_nodes_size;
 	uint64_t los_nodes_alloc;
-	double x;
-	double y;
-	double f_score;
-	double g_score;
+	DIM x;
+	DIM y;
+	DIM f_score;
+	DIM g_score;
 } NODE;
 
 typedef struct wall_grid
@@ -36,6 +36,8 @@ typedef struct wall_grid
 typedef struct node_mesh
 {
 	NODE *mesh;
+	uint32_t w;
+	uint32_t h;
 	uint64_t mesh_size;
 	uint64_t mesh_alloc;
 } NODE_MESH;

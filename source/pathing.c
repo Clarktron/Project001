@@ -86,7 +86,7 @@ void pathing_node_mesh_remove(NODE_MESH *mesh, uint64_t index)
 					// this node is Bn
 					uint64_t size = mesh->mesh[connected].los_nodes_size;
 					uint64_t last_index;
-					double last_dist;
+					DIM last_dist;
 
 					// make B's list one smaller
 					mesh->mesh[connected].los_nodes_size--;
@@ -291,10 +291,18 @@ void _pathing_generate_mesh(NODE_MESH *mesh, double size, WALL_GRID *grid)
 	uint64_t h_border = grid->wall_h;
 	uint64_t inserts = 0;
 
-	// nodify corners
-	for (j = 0; j < h_border - 1; j++)
+	mesh->mesh = (NODE *)malloc(sizeof(NODE) * ((mesh->w * 2) * (mesh->h * 2)));
+	if (mesh == NULL)
 	{
-		for (i = 0; i < w_border - 1; i++)
+		log_output("pathing: Unable to allocate memory\n");
+		return;
+	}
+	memset(mesh->mesh, 0, sizeof(NODE) * ((mesh->w * 2) * (mesh->h * 2)));
+
+	// nodify corners
+	for (j = 0; j < mesh->h; j++)
+	{
+		for (i = 0; i < mesh->w; i++)
 		{
 			uint8_t walls = 0;
 
@@ -1047,7 +1055,7 @@ double _pathing_get_distance(double x1, double y1, double x2, double y2)
 	return sqrt(x * x + y * y);
 }
 
-NODE_MESH *pathing_create_mesh(WALL_GRID *grid, double size)
+NODE_MESH *pathing_create_mesh(WALL_GRID *grid, DIM w, DIM h, double size)
 {
 	NODE_MESH *mesh = NULL;
 
@@ -1060,6 +1068,9 @@ NODE_MESH *pathing_create_mesh(WALL_GRID *grid, double size)
 	}
 	memset(mesh, 0, sizeof(NODE_MESH));
 
+	mesh->w = w;
+	mesh->h = h;
+
 	//game_draw_walls(game, wall_grid, wall_w, wall_h);
 	// Insert the rest of the nodes based on the map geometry
 	_pathing_generate_mesh(mesh, size, grid);
@@ -1071,7 +1082,7 @@ NODE_MESH *pathing_create_mesh(WALL_GRID *grid, double size)
 	return mesh;
 }
 
-NODE_MESH *pathing_create_disconnected_mesh(WALL_GRID *grid, double size)
+NODE_MESH *pathing_create_disconnected_mesh(WALL_GRID *grid, DIM w, DIM h, double size)
 {
 	NODE_MESH *mesh = NULL;
 

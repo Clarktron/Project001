@@ -13,5 +13,6 @@ void system_setup();
 void system_teardown();
 int32_t system_rand();
 void system_sleep(uint32_t milliseconds);
+uint64_t system_time();
 
 #endif
