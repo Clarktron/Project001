@@ -6,6 +6,7 @@
 #include "menu.h"
 #include "unit.h"
 #include "pathing.h"
+#include "building.h"
 
 #include <stdio.h>
 #include <stdint.h>
@@ -43,11 +44,12 @@ typedef struct mouse
 struct game
 {
 	MOUSE mouse;
-	int32_t x_offset;
-	int32_t y_offset;
 	UNIT_LIST *unit_list;
 	UNIT_LIST *unit_list_end;
 	uint64_t num_units;
+	BUILDING_LIST *building_list;
+	BUILDING_LIST *building_list_end;
+	uint64_t num_buildings;
 	MAP *map;
 	uint8_t quit;
 };
@@ -60,11 +62,13 @@ void _game_post(GAME *game, STATE *state, INPUT_S *input);
 void _game_scroll(GAME *game);
 void _game_draw_mouse(GAME *game);
 void _game_update_mouse(GAME *game);
-double _game_get_unit_z(double x, double y, uint8_t corners);
-void _game_create_unit(GAME *game, UNIT unit);
-void _game_create_unit_gunner(GAME *game, double x, double y);
+void _game_create_unit(GAME *game , UNIT unit);
+void _game_create_unit_gunner(GAME *game, DIM x, DIM y);
 void _game_unit_path_update(GAME *game);
-void _game_pathfind(GAME *game, UNIT *unit, double x, double y);
+void _game_pathfind(GAME *game, UNIT *unit, DIM x, DIM y);
+
+void _game_create_building(GAME *game, BUILDING building);
+void _game_create_building_house(GAME *game, DIM_GRAN x, DIM_GRAN y);
 
 void game_loop(MENU_S *menu)
 {
@@ -182,7 +186,7 @@ void _game_mouse_button_event_cb(SDL_MouseButtonEvent ev, void *ptr)
 			{
 				if (unit_list->unit.base.selected == 1)
 				{
-					double x, y;
+					DIM x, y;
 					game_screen_coords_to_unit_coords(game, game->mouse.cur_x, game->mouse.cur_y, &x, &y);
 					_game_pathfind(game, &unit_list->unit, x, y);
 				}
@@ -229,17 +233,20 @@ void _game_init(GAME *game, STATE *state, INPUT_S *input)
 
 	memset(game, 0, sizeof(GAME));
 
-	game->map = map_generate_random(50, 50);
+	//game->map = map_generate_random(50, 50);
 
 	// load map from file
-	//game->map = map_load(3);
+	game->map = map_load(1);
 	
 
 	// create blank map
 	//game->map = map_generate_blank(10, 10);
 	
-	game->x_offset = (int32_t)((map_get_width(game->map) * (TILE_WIDTH / 2) + map_get_height(game->map) * (TILE_WIDTH / 2)) / 2 - (SCREEN_WIDTH / 2));
-	game->y_offset = (int32_t)(-1 * (SCREEN_HEIGHT / 2) + (map_get_height(game->map) * (TILE_HEIGHT / 2) - map_get_width(game->map) * (TILE_HEIGHT / 2)) / 2);
+	
+	int32_t x_offset = (int32_t)((map_get_width(game->map) * (TILE_WIDTH / 2) + map_get_height(game->map) * (TILE_WIDTH / 2)) / 2 - (SCREEN_WIDTH / 2));
+	int32_t y_offset = (int32_t)(-1 * (SCREEN_HEIGHT / 2) + (map_get_height(game->map) * (TILE_HEIGHT / 2) - map_get_width(game->map) * (TILE_HEIGHT / 2)) / 2);
+	
+	map_set_offset(game->map, x_offset, y_offset);
 	game->mouse.left = MOUSE_UP;
 	game->mouse.prev_left = MOUSE_UP;
 	game->mouse.left = MOUSE_UP;
@@ -261,8 +268,15 @@ void _game_init(GAME *game, STATE *state, INPUT_S *input)
 
 	for (i = 0; i < 3; i++)
 	{
-		_game_create_unit_gunner(game, (system_rand() % (map_get_width(game->map) * 10)) / 10.0, (system_rand() % (map_get_height(game->map) * 10)) / 10.0);
+		DIM x, y;
+		x = world_dim_builder(system_rand() % (map_get_width(game->map) * 10), 0) / 10;
+		y = world_dim_builder(system_rand() % (map_get_height(game->map) * 10), 0) / 10;
+		_game_create_unit_gunner(game, x, y);
 	}
+
+	//map_set_unit_meshes(game->map);
+
+	_game_create_building_house(game, 2, 2);
 
 	/*
 	double scale_x = 10;
@@ -275,8 +289,6 @@ void _game_init(GAME *game, STATE *state, INPUT_S *input)
 		}
 	}
 	//*/
-
-	map_set_unit_meshes(game->map);
 }
 
 void _game_play(GAME *game, STATE *state)
@@ -285,10 +297,12 @@ void _game_play(GAME *game, STATE *state)
 	_game_scroll(game);
 
 	unit_msort_unit_list(&(game->unit_list), &(game->unit_list_end));
+	building_msort_building_list(&(game->building_list), &(game->building_list_end));
 	_game_unit_path_update(game);
 
 	map_update_units(game->map, game->unit_list);
-	map_draw(game->map, game->unit_list, game->x_offset, game->y_offset);
+	map_update_buildings(game->map, game->building_list);
+	map_draw(game->map, game->unit_list, game->building_list);
 	_game_draw_mouse(game);
 
 	if (game->quit)
@@ -333,49 +347,54 @@ void _game_scroll(GAME *game)
 {
 	if (game->mouse.left == MOUSE_UP)
 	{
+		int32_t x_offset, y_offset;
+		map_get_offset(game->map, &x_offset, &y_offset);
+
 		if (game->mouse.cur_x == 0)
 		{
-			game->x_offset -= SCREEN_SPEED_X;
+			x_offset -= SCREEN_SPEED_X;
 		}
 		if (game->mouse.cur_x == SCREEN_WIDTH - 1)
 		{
-			game->x_offset += SCREEN_SPEED_X;
+			x_offset += SCREEN_SPEED_X;
 		}
 		if (game->mouse.cur_y == 0)
 		{
-			game->y_offset -= SCREEN_SPEED_Y;
+			y_offset -= SCREEN_SPEED_Y;
 		}
 		if (game->mouse.cur_y == SCREEN_HEIGHT - 1)
 		{
-			game->y_offset += SCREEN_SPEED_Y;
+			y_offset += SCREEN_SPEED_Y;
 		}
+
+		map_set_offset(game->map, x_offset, y_offset);
 		// need to clamp the window to the border of the map
 		
-		double x, y;
+		DIM x, y;
 		uint8_t clamp = 0;
 
 		game_screen_coords_to_unit_coords(game, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, &x, &y);
 
-		double orig_x = x;
-		double orig_y = y;
+		DIM orig_x = x;
+		DIM orig_y = y;
 
-		double w = (double)map_get_width(game->map);
-		double h = (double)map_get_height(game->map);
+		DIM w = world_dim_builder(map_get_width(game->map), 0);
+		DIM h = world_dim_builder(map_get_height(game->map), 0);
 
-		if (x < 0.0)
+		if (x < 0)
 		{
 			clamp = 1;
-			x = 0.0;
+			x = 0;
 		}
 		if (x > w)
 		{
 			clamp = 1;
 			x = w;
 		}
-		if (y < 0.0)
+		if (y < 0)
 		{
 			clamp = 1;
-			y = 0.0;
+			y = 0;
 		}
 		if (y > h)
 		{
@@ -394,8 +413,8 @@ void _game_scroll(GAME *game)
 			int32_t diff_x = screen_x - orig_screen_x;
 			int32_t diff_y = screen_y - orig_screen_y;
 
-			game->x_offset += diff_x;
-			game->y_offset += diff_y;
+			map_get_offset(game->map, &x_offset, &y_offset);
+			map_set_offset(game->map, x_offset + diff_x, y_offset + diff_y);
 		}
 	}
 }
@@ -447,7 +466,7 @@ void _game_update_mouse(GAME *game)
 	}
 }
 
-void game_unit_coords_to_drawing_coords(GAME *game, double unit_x, double unit_y, int32_t *screen_x, int32_t *screen_y)
+void game_unit_coords_to_drawing_coords(GAME *game, DIM unit_x, DIM unit_y, int32_t *screen_x, int32_t *screen_y)
 {
 	if (screen_x == NULL || screen_y == NULL)
 	{
@@ -455,43 +474,42 @@ void game_unit_coords_to_drawing_coords(GAME *game, double unit_x, double unit_y
 		return;
 	}
 	map_unit_coords_to_drawing_coords(game->map, unit_x, unit_y, screen_x, screen_y);
-	*screen_x -= game->x_offset;
-	*screen_y -= game->y_offset;
 }
 
-void game_unit_coords_to_screen_coords(GAME *game, double unit_x, double unit_y, int32_t *screen_x, int32_t *screen_y)
+void game_unit_coords_to_screen_coords(GAME *game, DIM unit_x, DIM unit_y, int32_t *screen_x, int32_t *screen_y)
 {
 	if (screen_x == NULL || screen_y == NULL)
 	{
 		log_output("game: Parameter was NULL: screen_x = %i, screen_y = %i\n", screen_x, screen_y);
 		return;
 	}
+	int32_t x_offset, y_offset;
 	map_unit_coords_to_logical_coords(unit_x, unit_y, screen_x, screen_y);
-	*screen_x -= game->x_offset;
-	*screen_y -= game->y_offset;
+	map_get_offset(game->map, &x_offset, &y_offset);
+	*screen_x -= x_offset;
+	*screen_y -= y_offset;
 }
 
-void game_screen_coords_to_unit_coords(GAME *game, int32_t screen_x, int32_t screen_y, double *unit_x, double *unit_y)
+void game_screen_coords_to_unit_coords(GAME *game, int32_t screen_x, int32_t screen_y, DIM *unit_x, DIM *unit_y)
 {
 	if (unit_x == NULL || unit_y == NULL)
 	{
 		log_output("game: Parameter was NULL: unit_x = %i, unit_y = %i\n", unit_x, unit_y);
 		return;
 	}
-	int32_t x_orig = screen_x + game->x_offset;
-	int32_t y_orig = screen_y + game->y_offset;
+	int32_t x_offset, y_offset;
+	map_get_offset(game->map, &x_offset, &y_offset);
+	int32_t x_orig = screen_x + x_offset;
+	int32_t y_orig = screen_y + y_offset;
 	map_logical_coords_to_unit_coords(x_orig, y_orig, unit_x, unit_y);
 }
 
 void _game_create_unit(GAME *game, UNIT unit)
 {
-	int32_t x_grid, y_grid;
-	x_grid = (int32_t)unit.base.x;
-	y_grid = (int32_t)unit.base.y;
 	unit_insert(&(game->unit_list), &(game->unit_list_end), unit);
 }
 
-void _game_create_unit_gunner(GAME *game, double x, double y)
+void _game_create_unit_gunner(GAME *game, DIM x, DIM y)
 {
 	UNIT unit;
 
@@ -517,15 +535,15 @@ void _game_unit_path_update(GAME *game)
 	}
 }
 
-void _game_pathfind(GAME *game, UNIT *unit, double x, double y)
+void _game_pathfind(GAME *game, UNIT *unit, DIM x, DIM y)
 {
-	map_find_path(game->map, unit, x, y);
+	map_find_path(game->map, game->building_list, unit, x, y);
 }
 
-void game_draw_nodes(GAME *game, void *mesh)
+void game_draw_nodes(GAME *game, NODE_MESH *mesh)
 {
 	uint64_t i, j;
-	NODE_MESH *node_mesh = (NODE_MESH *)mesh;
+	NODE_MESH *node_mesh = mesh;
 
 	for (i = 0; i < node_mesh->mesh_size; i++)
 	{
@@ -543,4 +561,22 @@ void game_draw_nodes(GAME *game, void *mesh)
 		sprintf_s(str, 5, "%llu", i);
 		render_draw_text(x, y, str, 2, 0x7F, 0x00, 0x00, 0xFF, ALIGN_CENTER, ALIGN_CENTER, QUALITY_BEST, 1);
 	}
+}
+
+void _game_create_building(GAME *game, BUILDING building)
+{
+	building_insert(&(game->building_list), &(game->building_list_end), building);
+}
+
+void _game_create_building_house(GAME *game, DIM_GRAN x, DIM_GRAN y)
+{
+	BUILDING building;
+
+	building = building_defaults[TYPE_HOUSE];
+	building.base.x = x;
+	building.base.y = y;
+
+	_game_create_building(game, building);
+
+	//map_add_node(game->map, x, y, 1, 1);
 }

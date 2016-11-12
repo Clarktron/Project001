@@ -89,6 +89,12 @@
     <ClCompile Include="source\pathing.c">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="source\building.c">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\world.c">
+      <Filter>source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\system.h">
@@ -337,6 +343,12 @@
     <ClInclude Include="include\pathing.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\building.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\world.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="x64\Debug\libfreetype-6.dll">
@@ -494,6 +506,78 @@
     </None>
     <None Include="x64\Debug Opt\zlib1.dll">
       <Filter>x64\Debug Opt</Filter>
+    </None>
+    <None Include="Win32\Debug\SDL2.dll">
+      <Filter>Win32\Debug</Filter>
+    </None>
+    <None Include="Win32\Debug\SDL2_image.dll">
+      <Filter>Win32\Debug</Filter>
+    </None>
+    <None Include="Win32\Debug\SDL2_ttf.dll">
+      <Filter>Win32\Debug</Filter>
+    </None>
+    <None Include="Win32\Debug Opt\SDL2.dll">
+      <Filter>Win32\Debug Opt</Filter>
+    </None>
+    <None Include="Win32\Debug Opt\SDL2_image.dll">
+      <Filter>Win32\Debug Opt</Filter>
+    </None>
+    <None Include="Win32\Debug Opt\SDL2_ttf.dll">
+      <Filter>Win32\Debug Opt</Filter>
+    </None>
+    <None Include="Win32\Debug Nowindow\SDL2.dll">
+      <Filter>Win32\Debug Nowindow</Filter>
+    </None>
+    <None Include="Win32\Debug Nowindow\SDL2_image.dll">
+      <Filter>Win32\Debug Nowindow</Filter>
+    </None>
+    <None Include="Win32\Debug Nowindow\SDL2_ttf.dll">
+      <Filter>Win32\Debug Nowindow</Filter>
+    </None>
+    <None Include="Win32\Release\SDL2.dll">
+      <Filter>Win32\Release</Filter>
+    </None>
+    <None Include="Win32\Release\SDL2_image.dll">
+      <Filter>Win32\Release</Filter>
+    </None>
+    <None Include="Win32\Release\SDL2_ttf.dll">
+      <Filter>Win32\Release</Filter>
+    </None>
+    <None Include="x64\Debug\SDL2.dll">
+      <Filter>x64\Debug</Filter>
+    </None>
+    <None Include="x64\Debug\SDL2_image.dll">
+      <Filter>x64\Debug</Filter>
+    </None>
+    <None Include="x64\Debug\SDL2_ttf.dll">
+      <Filter>x64\Debug</Filter>
+    </None>
+    <None Include="x64\Debug Opt\SDL2.dll">
+      <Filter>x64\Debug Opt</Filter>
+    </None>
+    <None Include="x64\Debug Opt\SDL2_image.dll">
+      <Filter>x64\Debug Opt</Filter>
+    </None>
+    <None Include="x64\Debug Opt\SDL2_ttf.dll">
+      <Filter>x64\Debug Opt</Filter>
+    </None>
+    <None Include="x64\Debug Nowindow\SDL2.dll">
+      <Filter>x64\Debug Nowindow</Filter>
+    </None>
+    <None Include="x64\Debug Nowindow\SDL2_image.dll">
+      <Filter>x64\Debug Nowindow</Filter>
+    </None>
+    <None Include="x64\Debug Nowindow\SDL2_ttf.dll">
+      <Filter>x64\Debug Nowindow</Filter>
+    </None>
+    <None Include="x64\Release\SDL2.dll">
+      <Filter>x64\Release</Filter>
+    </None>
+    <None Include="x64\Release\SDL2_image.dll">
+      <Filter>x64\Release</Filter>
+    </None>
+    <None Include="x64\Release\SDL2_ttf.dll">
+      <Filter>x64\Release</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

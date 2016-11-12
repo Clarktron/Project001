@@ -15,20 +15,22 @@
 #define INITIAL_LIST_SIZE (10)
 #define DRAW_SCALE (30)
 
-void _pathing_add_connecting_node(NODE *node, uint64_t index, double dist);
-void _pathing_generate_mesh(NODE_MESH *mesh, double size, WALL_GRID *grid);
-uint8_t _pathing_connect_node(NODE_MESH *mesh, double size, uint64_t a, uint64_t b, WALL_GRID *grid);
-void _pathing_connect_mesh(NODE_MESH *mesh, double size, WALL_GRID *grid);
-uint8_t _pathing_los_check(double ax1, double ay1, double ax2, double ay2, double bx1, double by1, double bx2, double by2);
-uint8_t _pathing_corners_match(MAP *map, uint64_t x, uint64_t y, uint8_t up);
-uint8_t _pathing_point_on_segment(double x1, double y1, double x2, double y2, double x3, double y3);
-uint8_t _pathing_triplet_orientation(double x1, double y1, double x2, double y2, double x3, double y3);
-double _pathing_get_distance(double x1, double y1, double x2, double y2);
-void _pathing_add_node_to_heap(NODE_MESH mesh, uint64_t **heap, uint64_t *heap_size, uint64_t *heap_alloc, uint64_t node);
+void _pathing_add_connecting_node(NODE *node, uint64_t index, DIM dist);
+void _pathing_generate_mesh(NODE_MESH *mesh, DIM size, WALL_GRID *grid);
+uint8_t _pathing_connect_node(NODE_MESH *mesh, DIM size, uint64_t a, uint64_t b, WALL_GRID *grid);
+void _pathing_connect_to_all(NODE_MESH *mesh, WALL_GRID *grid, uint64_t index, DIM size);
+//void _pathing_connect_mesh(NODE_MESH *mesh, DIM size, WALL_GRID *grid);
+uint8_t _pathing_los_check(DIM ax1, DIM ay1, DIM ax2, DIM ay2, DIM bx1, DIM by1, DIM bx2, DIM by2);
+uint8_t _pathing_corners_match(MAP *map, DIM_GRAN x, DIM_GRAN y, uint8_t up);
+uint8_t _pathing_point_on_segment(DIM x1, DIM y1, DIM x2, DIM y2, DIM x3, DIM y3);
+uint8_t _pathing_triplet_orientation(DIM x1, DIM y1, DIM x2, DIM y2, DIM x3, DIM y3);
+DIM _pathing_get_distance(DIM x1, DIM y1, DIM x2, DIM y2);
+//void _pathing_add_node_to_heap(NODE_MESH mesh, uint64_t **heap, uint64_t *heap_size, uint64_t *heap_alloc, uint64_t node);
 uint64_t _pathing_remove_node_from_heap(NODE_MESH *mesh, uint64_t **heap, uint64_t *heap_size);
-uint64_t _pathing_node_mesh_insert_quick(NODE_MESH *mesh, double x, double y);
+uint64_t _pathing_node_mesh_insert(NODE_MESH *mesh, DIM x, DIM y);
+uint64_t _pathing_node_mesh_insert_quick(NODE_MESH *mesh, DIM x, DIM y);
 
-uint64_t pathing_node_mesh_insert(NODE_MESH *mesh, double x, double y, double size, WALL_GRID *grid)
+/*uint64_t pathing_node_mesh_insert(NODE_MESH *mesh, DIM x, DIM y, DIM size, WALL_GRID *grid)
 {
 	uint64_t i;
 	uint64_t index = _pathing_node_mesh_insert_quick(mesh, x, y);
@@ -51,12 +53,12 @@ uint64_t pathing_node_mesh_insert(NODE_MESH *mesh, double x, double y, double si
 	}
 
 	return index;
-}
+}*/
 
-void pathing_node_mesh_remove(NODE_MESH *mesh, uint64_t index)
+void pathing_node_mesh_remove_end(NODE_MESH *mesh)
 {
 	uint64_t i, j;
-	uint64_t last_mesh_index = mesh->mesh_size - 1;
+	uint64_t index = mesh->mesh_size - 1;
 
 	// A is the indexed node
 	// B is the node referenced
@@ -71,7 +73,7 @@ void pathing_node_mesh_remove(NODE_MESH *mesh, uint64_t index)
 	// for every one of A's connections
 	for (i = 0; i < mesh->mesh[index].los_nodes_size; ++i)
 	{
-		// if Ax isn't pointing at us (always the case?)
+		// if Ax isn't pointing at A (always the case?)
 		if (mesh->mesh[index].los_nodes[i].index != index)
 		{
 			// get the index of B
@@ -86,7 +88,7 @@ void pathing_node_mesh_remove(NODE_MESH *mesh, uint64_t index)
 					// this node is Bn
 					uint64_t size = mesh->mesh[connected].los_nodes_size;
 					uint64_t last_index;
-					double last_dist;
+					DIM last_dist;
 
 					// make B's list one smaller
 					mesh->mesh[connected].los_nodes_size--;
@@ -102,13 +104,13 @@ void pathing_node_mesh_remove(NODE_MESH *mesh, uint64_t index)
 						mesh->mesh[connected].los_nodes[j].dist = last_dist;
 
 						mesh->mesh[connected].los_nodes[size - 1].index = 0;
-						mesh->mesh[connected].los_nodes[size - 1].dist = 0.0;
+						mesh->mesh[connected].los_nodes[size - 1].dist = 0;
 					}
 					else
 					{
 						// reset the values of Bn
 						mesh->mesh[connected].los_nodes[j].index = 0;
-						mesh->mesh[connected].los_nodes[j].dist = 0.0;
+						mesh->mesh[connected].los_nodes[j].dist = 0;
 					}
 
 					// break, assuming that we only point there once (always the case?)
@@ -118,31 +120,19 @@ void pathing_node_mesh_remove(NODE_MESH *mesh, uint64_t index)
 		}
 	}
 
-	// if we aren't the last index
-	if (index != last_mesh_index)
-	{
-		// copy the last node over us
-		memcpy(&(mesh->mesh[index]), &(mesh->mesh[last_mesh_index]), sizeof(NODE));
-	}
-	// clear the last node
-	memset(&(mesh->mesh[last_mesh_index]), 0, sizeof(NODE));
+	// clear the node
+	memset(&(mesh->mesh[index]), 0, sizeof(NODE));
 	// make the mesh smaller
 	mesh->mesh_size--;
 }
 
-uint64_t _pathing_node_mesh_insert_quick(NODE_MESH *mesh, double x, double y)
+uint64_t _pathing_node_mesh_insert(NODE_MESH *mesh, DIM x, DIM y)
 {
 	uint64_t index;
 	if (mesh->mesh == NULL)
 	{
-		mesh->mesh = (NODE *)malloc(sizeof(NODE) * INITIAL_MESH_NODES);
-		if (mesh->mesh == NULL)
-		{
-			log_output("pathing: Unable to allocate memory\n");
-			return 0;
-		}
-		memset(mesh->mesh, 0, sizeof(NODE) * INITIAL_MESH_NODES);
-		mesh->mesh_alloc = INITIAL_MESH_NODES;
+		log_output("pathing: Invalid argument(s)\n");
+		return 0;
 	}
 	else
 	{
@@ -150,7 +140,9 @@ uint64_t _pathing_node_mesh_insert_quick(NODE_MESH *mesh, double x, double y)
 		{
 			uint64_t mesh_alloc = mesh->mesh_alloc;
 			NODE *temp = NULL;
-			mesh->mesh_alloc *= 2;
+
+			// Increase the allocation size by an arbitrary amount
+			mesh->mesh_alloc += 10;
 			temp = (NODE *)realloc(mesh->mesh, sizeof(NODE) * mesh->mesh_alloc);
 			if (temp == NULL)
 			{
@@ -168,14 +160,35 @@ uint64_t _pathing_node_mesh_insert_quick(NODE_MESH *mesh, double x, double y)
 	mesh->mesh[index].los_nodes = NULL;
 	mesh->mesh[index].los_nodes_size = 0;
 	mesh->mesh[index].los_nodes_alloc = 0;
-	mesh->mesh[index].f_score = -1.0;
-	mesh->mesh[index].g_score = -1.0;
+	mesh->mesh[index].f_score = -1;
+	mesh->mesh[index].g_score = -1;
 	mesh->mesh_size++;
 
 	return index;
 }
 
-void _pathing_add_connecting_node(NODE *node, uint64_t index, double dist)
+uint64_t _pathing_node_mesh_insert_quick(NODE_MESH *mesh, DIM x, DIM y)
+{
+	uint64_t index;
+	if (mesh->mesh == NULL)
+	{
+		log_output("pathing: Invalid argument(s)\n");
+		return 0;
+	}
+	index = mesh->mesh_size;
+	mesh->mesh[index].x = x;
+	mesh->mesh[index].y = y;
+	mesh->mesh[index].los_nodes = NULL;
+	mesh->mesh[index].los_nodes_size = 0;
+	mesh->mesh[index].los_nodes_alloc = 0;
+	mesh->mesh[index].f_score = -1;
+	mesh->mesh[index].g_score = -1;
+	mesh->mesh_size++;
+
+	return index;
+}
+
+void _pathing_add_connecting_node(NODE *node, uint64_t index, DIM dist)
 {
 	if (node->los_nodes == NULL)
 	{
@@ -211,10 +224,11 @@ void _pathing_add_connecting_node(NODE *node, uint64_t index, double dist)
 	node->los_nodes_size++;
 }
 
-WALL_GRID *pathing_generate_wall_grid(MAP *map)
+WALL_GRID *pathing_generate_wall_grid(MAP *map, BUILDING_LIST *building_list)
 {
-	uint64_t i, j;
+	DIM_GRAN i, j;
 	WALL_GRID *grid;
+	BUILDING_LIST *building = building_list;
 
 	grid = malloc(sizeof(WALL_GRID));
 	if (grid == NULL)
@@ -268,6 +282,19 @@ WALL_GRID *pathing_generate_wall_grid(MAP *map)
 			}
 		}
 	}
+
+	while (building != NULL)
+	{
+		DIM_GRAN x = building->building.base.x;
+		DIM_GRAN y = building->building.base.y;
+
+		grid->wall_grid[x + y * grid->wall_w] |= 0x01;
+		grid->wall_grid[x + y * grid->wall_w] |= 0x02;
+		grid->wall_grid[x + 1 + y * grid->wall_w] |= 0x01;
+		grid->wall_grid[x + (y + 1) * grid->wall_w] |= 0x02;
+
+		building = building->next;
+	}
 	return grid;
 }
 
@@ -283,20 +310,26 @@ void pathing_destroy_wall_grid(WALL_GRID *grid)
 	}
 }
 
-void _pathing_generate_mesh(NODE_MESH *mesh, double size, WALL_GRID *grid)
+void _pathing_generate_mesh(NODE_MESH *mesh, DIM size, WALL_GRID *grid)
 {
-	uint64_t i, j;
-	uint8_t *map_border = grid->wall_grid;
-	uint64_t w_border = grid->wall_w;
-	uint64_t h_border = grid->wall_h;
-	uint64_t inserts = 0;
+	DIM_GRAN i, j;
 
-	// nodify corners
-	for (j = 0; j < h_border - 1; j++)
+	mesh->mesh = (NODE *)malloc(sizeof(NODE) * (mesh->w * mesh->h));
+	if (mesh == NULL)
 	{
-		for (i = 0; i < w_border - 1; i++)
+		log_output("pathing: Unable to allocate memory\n");
+		return;
+	}
+	memset(mesh->mesh, 0, sizeof(NODE) * (mesh->w * mesh->h));
+
+	mesh->mesh_alloc = mesh->w * mesh->h;
+
+	// nodify the grid
+	for (j = 0; j < mesh->h; j++)
+	{
+		for (i = 0; i < mesh->w; i++)
 		{
-			uint8_t walls = 0;
+			/*uint8_t walls = 0;
 
 			if (i > 0 && map_border[i - 1 + j * w_border] & 0x02)
 			{
@@ -320,20 +353,28 @@ void _pathing_generate_mesh(NODE_MESH *mesh, double size, WALL_GRID *grid)
 			{
 				// bottom wall
 				walls |= 0x08;
-			}
+			}*/
 
-			double x_left, y_up, x_right, y_down;
-			// 0.00001 is so that we don't get stuck in walls sometimes
-			x_left = i - size - NODE_OFFSET_CONTACT;
-			y_up = j - size - NODE_OFFSET_CONTACT;
-			x_right = i + size + NODE_OFFSET_CONTACT;
-			y_down = j + size + NODE_OFFSET_CONTACT;
-			//x_left = i - unit.base.size;
-			//y_up = j - unit.base.size;
-			//x_right = i + unit.base.size;
-			//y_down = j + unit.base.size;
+			DIM x_left, y_up, x_right, y_down;
+			// NODE_OFFSET_CONTACT is so that we don't get stuck in walls sometimes
+			x_left = world_dim_builder(i, 0) - size - NODE_OFFSET_CONTACT;
+			y_up = world_dim_builder(j, 0) - size - NODE_OFFSET_CONTACT;
+			x_right = world_dim_builder(i, 0) + size + NODE_OFFSET_CONTACT;
+			y_down = world_dim_builder(j, 0) + size + NODE_OFFSET_CONTACT;
 
-			switch (walls)
+			DIM half = world_dim_builder(1, 0) / 2;
+
+			_pathing_node_mesh_insert_quick(mesh, world_dim_builder(i, 0) + half, world_dim_builder(j, 0) + half);
+			// nodify left corner
+			//_pathing_node_mesh_insert_quick(mesh, x_left, y_up);
+			// nodify top corner
+			//_pathing_node_mesh_insert_quick(mesh, x_right, y_up);
+			// nodify right corner
+			//_pathing_node_mesh_insert_quick(mesh, x_right, y_down);
+			// nodify bottom corner
+			//_pathing_node_mesh_insert_quick(mesh, x_left, y_down);
+
+			/*switch (walls)
 			{
 				case 0x0C:
 					// nodify left corner
@@ -400,15 +441,25 @@ void _pathing_generate_mesh(NODE_MESH *mesh, double size, WALL_GRID *grid)
 				case 0x0F:
 				default:
 					break;
-			}
+			}*/
 		}
 	}
 }
 
-uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size, double x_a, double y_a, double x_b, double y_b)
+uint8_t _pathing_check_node(WALL_GRID *grid, DIM_GRAN x, DIM_GRAN y, DIM size, DIM x_a, DIM y_a, DIM x_b, DIM y_b)
 {
 	uint8_t *wall_grid = grid->wall_grid;
-	uint64_t wall_w = grid->wall_w;
+	DIM_GRAN wall_w = grid->wall_w;
+
+	// DIM versions of the various DIM_GRAN's we need
+	DIM x_dim = world_dim_builder(x, 0);
+	DIM y_dim = world_dim_builder(y, 0);
+	DIM x_dim_plus = world_dim_builder(x + 1, 0);
+	DIM y_dim_plus = world_dim_builder(y + 1, 0);
+	DIM x_dim_plus_plus = world_dim_builder(x + 2, 0);
+	DIM y_dim_plus_plus = world_dim_builder(y + 2, 0);
+	DIM x_dim_minus = world_dim_builder(x - 1, 0);
+	DIM y_dim_minus = world_dim_builder(y - 1, 0);
 
 	uint16_t walls = 0;
 
@@ -442,10 +493,10 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	// left check
 	if (walls & 0x0001)
 	{
-		double x1 = x - size;
-		double x2 = x + size;
-		double y1 = y - size;
-		double y2 = y + 1 + size;
+		DIM x1 = x_dim - size;
+		DIM x2 = x_dim + size;
+		DIM y1 = y_dim - size;
+		DIM y2 = y_dim_plus + size;
 
 		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
 		{
@@ -468,10 +519,10 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	// top check
 	if (walls & 0x0002)
 	{
-		double x1 = x - size;
-		double x2 = x + 1 + size;
-		double y1 = y - size;
-		double y2 = y + size;
+		DIM x1 = x_dim - size;
+		DIM x2 = x_dim_plus + size;
+		DIM y1 = y_dim - size;
+		DIM y2 = y_dim + size;
 
 		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
 		{
@@ -494,10 +545,10 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	// right check
 	if (walls & 0x0004)
 	{
-		double x1 = x + 1 - size;
-		double x2 = x + 1 + size;
-		double y1 = y - size;
-		double y2 = y + 1 + size;
+		DIM x1 = x_dim_plus - size;
+		DIM x2 = x_dim_plus + size;
+		DIM y1 = y_dim - size;
+		DIM y2 = y_dim_plus + size;
 
 		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
 		{
@@ -520,10 +571,10 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	// bottom check
 	if (walls & 0x0008)
 	{
-		double x1 = x - size;
-		double x2 = x + 1 + size;
-		double y1 = y + 1 - size;
-		double y2 = y + 1 + size;
+		DIM x1 = x_dim - size;
+		DIM x2 = x_dim_plus + size;
+		DIM y1 = y_dim_plus - size;
+		DIM y2 = y_dim_plus + size;
 
 		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
 		{
@@ -546,10 +597,10 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	// top-l check
 	if (walls & 0x0010)
 	{
-		double x1 = x - size;
-		double x2 = x + size;
-		double y1 = y - 1 - size;
-		double y2 = y + size;
+		DIM x1 = x_dim - size;
+		DIM x2 = x_dim + size;
+		DIM y1 = y_dim_minus - size;
+		DIM y2 = y_dim + size;
 
 		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
 		{
@@ -572,10 +623,10 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	// top-r check
 	if (walls & 0x0020)
 	{
-		double x1 = x + 1 - size;
-		double x2 = x + 1 + size;
-		double y1 = y - 1 - size;
-		double y2 = y + size;
+		DIM x1 = x_dim_plus - size;
+		DIM x2 = x_dim_plus + size;
+		DIM y1 = y_dim_minus - size;
+		DIM y2 = y_dim + size;
 
 		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
 		{
@@ -598,10 +649,10 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	// bottom-l check
 	if (walls & 0x0040)
 	{
-		double x1 = x - size;
-		double x2 = x + size;
-		double y1 = y + 1 - size;
-		double y2 = y + 2 + size;
+		DIM x1 = x_dim - size;
+		DIM x2 = x_dim + size;
+		DIM y1 = y_dim_plus - size;
+		DIM y2 = y_dim_plus_plus + size;
 
 		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
 		{
@@ -624,10 +675,10 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	// bottom-r check
 	if (walls & 0x0080)
 	{
-		double x1 = x + 1 - size;
-		double x2 = x + 1 + size;
-		double y1 = y + 1 - size;
-		double y2 = y + 2 + size;
+		DIM x1 = x_dim_plus - size;
+		DIM x2 = x_dim_plus + size;
+		DIM y1 = y_dim_plus - size;
+		DIM y2 = y_dim_plus_plus + size;
 
 		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
 		{
@@ -650,10 +701,10 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	// right-t check
 	if (walls & 0x0100)
 	{
-		double x1 = x + 1 - size;
-		double x2 = x + 2 + size;
-		double y1 = y - size;
-		double y2 = y + size;
+		DIM x1 = x_dim_plus - size;
+		DIM x2 = x_dim_plus_plus + size;
+		DIM y1 = y_dim - size;
+		DIM y2 = y_dim + size;
 
 		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
 		{
@@ -676,10 +727,10 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	// right-b check
 	if (walls & 0x0200)
 	{
-		double x1 = x + 1 - size;
-		double x2 = x + 2 + size;
-		double y1 = y + 1 - size;
-		double y2 = y + 1 + size;
+		DIM x1 = x_dim_plus - size;
+		DIM x2 = x_dim_plus_plus + size;
+		DIM y1 = y_dim_plus - size;
+		DIM y2 = y_dim_plus + size;
 
 		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
 		{
@@ -702,10 +753,10 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	// left-t check
 	if (walls & 0x0400)
 	{
-		double x1 = x - 1 - size;
-		double x2 = x + size;
-		double y1 = y - size;
-		double y2 = y + size;
+		DIM x1 = x_dim_minus - size;
+		DIM x2 = x_dim + size;
+		DIM y1 = y_dim - size;
+		DIM y2 = y_dim + size;
 
 		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
 		{
@@ -728,10 +779,10 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	// left-b check
 	if (walls & 0x0800)
 	{
-		double x1 = x - 1 - size;
-		double x2 = x + size;
-		double y1 = y + 1 - size;
-		double y2 = y + 1 + size;
+		DIM x1 = x_dim_minus - size;
+		DIM x2 = x_dim + size;
+		DIM y1 = y_dim_plus - size;
+		DIM y2 = y_dim_plus + size;
 
 		if (_pathing_los_check(x_a, y_a, x_b, y_b, x1, y1, x2, y1) != 0)
 		{
@@ -754,28 +805,28 @@ uint8_t _pathing_check_node(WALL_GRID *grid, uint64_t x, uint64_t y, double size
 	return 0;
 }
 
-uint8_t _pathing_connect_node(NODE_MESH *mesh, double size, uint64_t a, uint64_t b, WALL_GRID *grid)
+uint8_t _pathing_connect_node(NODE_MESH *mesh, DIM size, uint64_t a, uint64_t b, WALL_GRID *grid)
 {
-	uint64_t i, k, l;
-	double x_a = mesh->mesh[a].x;
-	double y_a = mesh->mesh[a].y;
+	DIM_GRAN i, k, l;
+	DIM x_a = mesh->mesh[a].x;
+	DIM y_a = mesh->mesh[a].y;
 
-	double x_b = mesh->mesh[b].x;
-	double y_b = mesh->mesh[b].y;
+	DIM x_b = mesh->mesh[b].x;
+	DIM y_b = mesh->mesh[b].y;
 
-	int32_t x_start, y_start, x_end, y_end;
-	x_start = (int32_t)x_a;
-	y_start = (int32_t)y_a;
+	DIM_GRAN x_start, y_start, x_end, y_end;
+	x_start = world_get_dim_gran(x_a);
+	y_start = world_get_dim_gran(y_a);
 
-	x_end = (int32_t)x_b;
-	y_end = (int32_t)y_b;
+	x_end = world_get_dim_gran(x_b);
+	y_end = world_get_dim_gran(y_b);
 
 	k = x_start;
 	l = y_start;
 	
-	int32_t dx = abs(x_end - x_start), dy = abs(y_end - y_start);
-	double e = -1.0;
-	double de = 0.0;
+	DIM_GRAN dx = abs(x_end - x_start), dy = abs(y_end - y_start);
+	DIM e = world_dim_builder(-1, 0);
+	DIM de = 0;
 
 	if (dx > dy)
 	{
@@ -792,11 +843,11 @@ uint8_t _pathing_connect_node(NODE_MESH *mesh, double size, uint64_t a, uint64_t
 
 		if (dx != 0)
 		{
-			de = fabs((double)dy / dx);
+			de = abs(world_dim_div(dy, dx));
 		}
 
 		// We are going to move along the x axis (left to right)
-		uint64_t count = abs((int32_t)x_end - x_start) + 1;
+		uint64_t count = abs(x_end - x_start) + 1;
 		for (i = 0; i < count; ++i)
 		{
 			if (_pathing_check_node(grid, k, l, size, x_a, y_a, x_b, y_b))
@@ -819,7 +870,7 @@ uint8_t _pathing_connect_node(NODE_MESH *mesh, double size, uint64_t a, uint64_t
 			if (e >= 0.0)
 			{
 				(up) ? --l : ++l;
-				e -= 1.0;
+				e -= world_dim_builder(1, 0);
 			}
 			(left) ? --k : ++k;
 		}
@@ -839,11 +890,11 @@ uint8_t _pathing_connect_node(NODE_MESH *mesh, double size, uint64_t a, uint64_t
 
 		if (dy != 0)
 		{
-			de = fabs((double)dx / dy);
+			de = abs(world_dim_div(dx, dy));
 		}
 
 		// We are going to move along the y axis (top to bottom)
-		uint64_t count = abs((int32_t)y_end - y_start) + 1;
+		uint64_t count = abs(y_end - y_start) + 1;
 		for (i = 0; i < count; ++i)
 		{
 			if (_pathing_check_node(grid, k, l, size, x_a, y_a, x_b, y_b))
@@ -866,7 +917,7 @@ uint8_t _pathing_connect_node(NODE_MESH *mesh, double size, uint64_t a, uint64_t
 			if (e >= 0.0)
 			{
 				(left) ? --k : ++k;
-				e -= 1.0;
+				e -= world_dim_builder(1, 0);
 			}
 			(up) ? --l : ++l;
 		}
@@ -877,7 +928,7 @@ uint8_t _pathing_connect_node(NODE_MESH *mesh, double size, uint64_t a, uint64_t
 	return 0;
 }
 
-void _pathing_connect_to_all(NODE_MESH *mesh, WALL_GRID *grid, uint64_t index, double size)
+void _pathing_connect_to_all(NODE_MESH *mesh, WALL_GRID *grid, uint64_t index, DIM size)
 {
 	uint64_t i;
 	if (mesh->mesh[index].los_nodes == NULL)
@@ -899,31 +950,79 @@ void _pathing_connect_to_all(NODE_MESH *mesh, WALL_GRID *grid, uint64_t index, d
 	}
 }
 
-void _pathing_connect_mesh(NODE_MESH *mesh, double size, WALL_GRID *grid)
+void _pathing_connect_mesh(NODE_MESH *mesh, DIM size, WALL_GRID *grid)
 {
 	uint64_t i, j;
 	// Connect the mesh
-	for (i = 0; i < mesh->mesh_size; i++)
+	for (j = 0; j < mesh->h; j++)
 	{
-		for (j = 0; j < mesh->mesh_size; j++)
+		for (i = 0; i < mesh->w; i++)
 		{
-			if (i != j)
+			//render_line((int32_t)(mesh->mesh[i].x * DRAW_SCALE), (int32_t)(mesh->mesh[i].y * DRAW_SCALE), (int32_t)(mesh->mesh[j].x * DRAW_SCALE), (int32_t)(mesh->mesh[j].y * DRAW_SCALE), 0x00, 0x00, 0x00, 1);
+			/*if (_pathing_connect_node(mesh, size, i, j, grid))
+			{
+				//render_line((int32_t)(mesh->mesh[i].x * DRAW_SCALE), (int32_t)(mesh->mesh[i].y * DRAW_SCALE), (int32_t)(mesh->mesh[j].x * DRAW_SCALE), (int32_t)(mesh->mesh[j].y * DRAW_SCALE), 0xFF, 0x00, 0x00, 1);
+			}
+			else
 			{
 				//render_line((int32_t)(mesh->mesh[i].x * DRAW_SCALE), (int32_t)(mesh->mesh[i].y * DRAW_SCALE), (int32_t)(mesh->mesh[j].x * DRAW_SCALE), (int32_t)(mesh->mesh[j].y * DRAW_SCALE), 0x00, 0x00, 0x00, 1);
-				if (_pathing_connect_node(mesh, size, i, j, grid))
+			}*/
+
+			if (i > 0)
+			{
+				//connect to left
+				_pathing_connect_node(mesh, size, i + j * mesh->w, i - 1 + (j) * mesh->w, grid);
+				//_pathing_connect_node(mesh, size, i - 1 + (j) * mesh->w, i + j * mesh->w, grid);
+
+				if (j > 0)
 				{
-					//render_line((int32_t)(mesh->mesh[i].x * DRAW_SCALE), (int32_t)(mesh->mesh[i].y * DRAW_SCALE), (int32_t)(mesh->mesh[j].x * DRAW_SCALE), (int32_t)(mesh->mesh[j].y * DRAW_SCALE), 0xFF, 0x00, 0x00, 1);
+					//connect to top left
+					_pathing_connect_node(mesh, size, i + j * mesh->w, i - 1 + (j - 1) * mesh->w, grid);
+					//_pathing_connect_node(mesh, size, i - 1 + (j - 1) * mesh->w, i + j * mesh->w, grid);
 				}
-				else
+				if (j < mesh->h - 1)
 				{
-					//render_line((int32_t)(mesh->mesh[i].x * DRAW_SCALE), (int32_t)(mesh->mesh[i].y * DRAW_SCALE), (int32_t)(mesh->mesh[j].x * DRAW_SCALE), (int32_t)(mesh->mesh[j].y * DRAW_SCALE), 0x00, 0x00, 0x00, 1);
+					//connect to bottom left
+					_pathing_connect_node(mesh, size, i + j * mesh->w, i - 1 + (j + 1) * mesh->w, grid);
+					//_pathing_connect_node(mesh, size, i - 1 + (j + 1) * mesh->w, i + j * mesh->w, grid);
 				}
+			}
+			if (i < mesh->w - 1)
+			{
+				//connect to right
+				_pathing_connect_node(mesh, size, i + j * mesh->w, i + 1 + (j) * mesh->w, grid);
+				//_pathing_connect_node(mesh, size, i + 1 + (j) * mesh->w, i + j * mesh->w, grid);
+
+				if (j > 0)
+				{
+					//connect to top right
+					_pathing_connect_node(mesh, size, i + j * mesh->w, i + 1 + (j - 1) * mesh->w, grid);
+					//_pathing_connect_node(mesh, size, i + 1 + (j - 1) * mesh->w, i + j * mesh->w, grid);
+				}
+				if (j < mesh->h - 1)
+				{
+					//connect to bottom right
+					_pathing_connect_node(mesh, size, i + j * mesh->w, i + 1 + (j + 1) * mesh->w, grid);
+					//_pathing_connect_node(mesh, size, i + 1 + (j + 1) * mesh->w, i + j * mesh->w, grid);
+				}
+			}
+			if (j > 0)
+			{
+				//connect to top
+				_pathing_connect_node(mesh, size, i + j * mesh->w, i + (j - 1) * mesh->w, grid);
+				//_pathing_connect_node(mesh, size, i + (j - 1) * mesh->w, i + j * mesh->w, grid);
+			}
+			if (j < mesh->h - 1)
+			{
+				//connect to bottom
+				_pathing_connect_node(mesh, size, i + j * mesh->w, i + (j + 1) * mesh->w, grid);
+				//_pathing_connect_node(mesh, size, i + (j + 1) * mesh->w, i + j * mesh->w, grid);
 			}
 		}
 	}
 }
 
-uint8_t _pathing_los_check(double ax1, double ay1, double ax2, double ay2, double bx1, double by1, double bx2, double by2)
+uint8_t _pathing_los_check(DIM ax1, DIM ay1, DIM ax2, DIM ay2, DIM bx1, DIM by1, DIM bx2, DIM by2)
 {
 	uint8_t o1 = _pathing_triplet_orientation(ax1, ay1, ax2, ay2, bx1, by1);
 	uint8_t o2 = _pathing_triplet_orientation(ax1, ay1, ax2, ay2, bx2, by2);
@@ -955,7 +1054,7 @@ uint8_t _pathing_los_check(double ax1, double ay1, double ax2, double ay2, doubl
 	return 0;
 }
 
-uint8_t _pathing_corners_match(MAP *map, uint64_t x, uint64_t y, uint8_t up)
+uint8_t _pathing_corners_match(MAP *map, DIM_GRAN x, DIM_GRAN y, uint8_t up)
 {
 	uint8_t corners1 = map_get_corners(map, x, y);
 	uint8_t corners2;
@@ -1019,7 +1118,7 @@ uint8_t _pathing_corners_match(MAP *map, uint64_t x, uint64_t y, uint8_t up)
 	return 0;
 }
 
-uint8_t _pathing_point_on_segment(double x1, double y1, double x2, double y2, double x3, double y3)
+uint8_t _pathing_point_on_segment(DIM x1, DIM y1, DIM x2, DIM y2, DIM x3, DIM y3)
 {
 	if (x2 <= max(x1, x3) && x2 >= min(x1, x3) && y2 <= max(y1, y3) && y2 >= min(y1, y3))
 	{
@@ -1028,9 +1127,9 @@ uint8_t _pathing_point_on_segment(double x1, double y1, double x2, double y2, do
 	return 0;
 }
 
-uint8_t _pathing_triplet_orientation(double x1, double y1, double x2, double y2, double x3, double y3)
+uint8_t _pathing_triplet_orientation(DIM x1, DIM y1, DIM x2, DIM y2, DIM x3, DIM y3)
 {
-	double val = (y2 - y1) * (x3 - x2) - (x2 - x1) * (y3 - y2);
+	DIM val = world_dim_mult(y2 - y1, x3 - x2) - world_dim_mult(x2 - x1, y3 - y2);
 
 	if (val == 0)
 	{
@@ -1040,14 +1139,14 @@ uint8_t _pathing_triplet_orientation(double x1, double y1, double x2, double y2,
 	return (val > 0) ? 1 : 2;
 }
 
-double _pathing_get_distance(double x1, double y1, double x2, double y2)
+DIM _pathing_get_distance(DIM x1, DIM y1, DIM x2, DIM y2)
 {
-	double x = fabs(x1 - x2);
-	double y = fabs(y1 - y2);
-	return sqrt(x * x + y * y);
+	DIM x = abs(x1 - x2);
+	DIM y = abs(y1 - y2);
+	return world_dim_sqrt(world_dim_mult(x, x) + world_dim_mult(y, y));
 }
 
-NODE_MESH *pathing_create_mesh(WALL_GRID *grid, double size)
+NODE_MESH *pathing_create_mesh(WALL_GRID *grid, DIM_GRAN w, DIM_GRAN h, DIM size)
 {
 	NODE_MESH *mesh = NULL;
 
@@ -1059,6 +1158,9 @@ NODE_MESH *pathing_create_mesh(WALL_GRID *grid, double size)
 		return NULL;
 	}
 	memset(mesh, 0, sizeof(NODE_MESH));
+
+	mesh->w = w;
+	mesh->h = h;
 
 	//game_draw_walls(game, wall_grid, wall_w, wall_h);
 	// Insert the rest of the nodes based on the map geometry
@@ -1071,7 +1173,7 @@ NODE_MESH *pathing_create_mesh(WALL_GRID *grid, double size)
 	return mesh;
 }
 
-NODE_MESH *pathing_create_disconnected_mesh(WALL_GRID *grid, double size)
+NODE_MESH *pathing_create_disconnected_mesh(WALL_GRID *grid, DIM_GRAN w, DIM_GRAN h, DIM size)
 {
 	NODE_MESH *mesh = NULL;
 
@@ -1083,6 +1185,9 @@ NODE_MESH *pathing_create_disconnected_mesh(WALL_GRID *grid, double size)
 		return NULL;
 	}
 	memset(mesh, 0, sizeof(NODE_MESH));
+
+	mesh->w = w;
+	mesh->h = h;
 
 	// Insert the nodes based on the map geometry
 	_pathing_generate_mesh(mesh, size, grid);
@@ -1264,7 +1369,7 @@ void _pathing_add_node_to_buffer(uint64_t **buffer, uint64_t *buffer_size, uint6
 	*buffer_size += 1;
 }
 
-void pathing_find_path(NODE_MESH *mesh, WALL_GRID *grid, UNIT *unit, double x_dest, double y_dest)
+void pathing_find_path(NODE_MESH *mesh, WALL_GRID *grid, UNIT *unit, DIM x_dest, DIM y_dest)
 {
 	uint64_t *open_nodes = NULL;
 	uint64_t open_nodes_size = 0;
@@ -1286,8 +1391,8 @@ void pathing_find_path(NODE_MESH *mesh, WALL_GRID *grid, UNIT *unit, double x_de
 	}
 	memset(came_from, 0xFFFFFFFF, sizeof(uint64_t) * (mesh->mesh_size + 2));
 
-	start = _pathing_node_mesh_insert_quick(mesh, unit->base.x, unit->base.y);
-	end = _pathing_node_mesh_insert_quick(mesh, x_dest, y_dest);
+	start = _pathing_node_mesh_insert(mesh, unit->base.x, unit->base.y);
+	end = _pathing_node_mesh_insert(mesh, x_dest, y_dest);
 
 	_pathing_connect_to_all(mesh, grid, start, unit->base.size);
 	_pathing_connect_to_all(mesh, grid, end, unit->base.size);
@@ -1312,7 +1417,7 @@ void pathing_find_path(NODE_MESH *mesh, WALL_GRID *grid, UNIT *unit, double x_de
 	*/
 
 	_pathing_add_node_to_heap(*mesh, &open_nodes, &open_nodes_size, &open_nodes_alloc, start);
-	mesh->mesh[start].g_score = 0.0;
+	mesh->mesh[start].g_score = 0;
 	mesh->mesh[start].f_score = _pathing_get_distance(mesh->mesh[start].x, mesh->mesh[start].y, mesh->mesh[end].x, mesh->mesh[end].y);
 
 	while (open_nodes != NULL)
@@ -1324,7 +1429,7 @@ void pathing_find_path(NODE_MESH *mesh, WALL_GRID *grid, UNIT *unit, double x_de
 		//pathing_draw_nodes(mesh);
 
 		// if this node has not been connected to the mesh, connect it now
-		_pathing_connect_to_all(mesh, grid, current, unit->base.size);
+		//_pathing_connect_to_all(mesh, grid, current, unit->base.size);
 
 		//render_begin_frame();
 		//pathing_draw_walls(grid);
@@ -1348,8 +1453,9 @@ void pathing_find_path(NODE_MESH *mesh, WALL_GRID *grid, UNIT *unit, double x_de
 			free(closed_nodes);
 			closed_nodes = NULL;
 
-			pathing_node_mesh_remove(mesh, end);
-			pathing_node_mesh_remove(mesh, start);
+			// get rid of the start/end nodes that were tacked on at the beginning
+			pathing_node_mesh_remove_end(mesh);
+			pathing_node_mesh_remove_end(mesh);
 
 			return;
 		}
@@ -1371,7 +1477,7 @@ void pathing_find_path(NODE_MESH *mesh, WALL_GRID *grid, UNIT *unit, double x_de
 			if (!in)
 			{
 				in = 0;
-				double temp_g;
+				DIM temp_g;
 				for (j = 0; j < open_nodes_size; j++)
 				{
 					if (index == open_nodes[j])
@@ -1416,8 +1522,8 @@ void pathing_find_path(NODE_MESH *mesh, WALL_GRID *grid, UNIT *unit, double x_de
 		free(closed_nodes);
 	}
 
-	pathing_node_mesh_remove(mesh, end);
-	pathing_node_mesh_remove(mesh, start);
+	pathing_node_mesh_remove_end(mesh);
+	pathing_node_mesh_remove_end(mesh);
 }
 
 void pathing_draw_walls(WALL_GRID *grid)
@@ -1456,13 +1562,13 @@ void pathing_draw_nodes(NODE_MESH *mesh)
 
 	for (i = 0; i < node_mesh->mesh_size; i++)
 	{
-		double x, y;
+		DIM x, y;
 		x = node_mesh->mesh[i].x;
 		y = node_mesh->mesh[i].y;
 		render_circle((int32_t)(x * DRAW_SCALE), (int32_t)(y * DRAW_SCALE), 4, 0xFF, 0x00, 0x00, 1);
 		for (j = 0; j < node_mesh->mesh[i].los_nodes_size; j++)
 		{
-			double x2, y2;
+			DIM x2, y2;
 			uint64_t index = node_mesh->mesh[i].los_nodes[j].index;
 			x2 = node_mesh->mesh[index].x;
 			y2 = node_mesh->mesh[index].y;

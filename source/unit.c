@@ -1,29 +1,47 @@
 #include "unit.h"
 #include "log.h"
+#include "world.h"
 
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+//#include <math.h>
 
-#define SQRT_RIGHT_ANGLE_TRI (0.70710678)
+struct unit_path
+{
+	UNIT_PATH *next;
+	DIM x;
+	DIM y;
+};
 
 const UNIT unit_defaults[NUM_UNIT_TYPES] =
 {
 	{
-		.tank = {{TYPE_TANK, 0, NULL, 0.0, 0.0, 0.008, 0.0, 0.1, 0.1, 100, 100, 2, 2}, 0.5, 0.9}
+		.tank = {{TYPE_TANK, 0, 0, NULL, 0, 0, 8000, 0, 0, 50000, 100, 100, 2, 2}, 0, 0}
 	},
 	{
-		.gunner = {{TYPE_GUNNER, 0, NULL, 0.0, 0.0, 0.010, 0.0, 0.1, 0.05, 100, 100, 2, 2}, 0.5, 0.9}
+		.gunner = {{TYPE_GUNNER, 0, 0, NULL, 0, 0, 1000, 0, 0, 20000, 100, 100, 2, 2}, 0, 0}
 	}
 };
 
 UNIT_LIST *_unit_msort_unit_list_compare(UNIT_LIST *first, UNIT_LIST *second);
 UNIT_LIST *_unit_msort_unit_list_merge(UNIT_LIST *first, UNIT_LIST *second);
 
-UNIT unit_create_base(double x, double y, double max_speed, double speed, double accel, double size, uint64_t max_health, uint64_t health, uint64_t attack, uint64_t defense)
+uint32_t unit_get_num_types()
+{
+	return NUM_UNIT_TYPES;
+}
+
+void unit_get_coords(UNIT *unit, DIM *x, DIM *y)
+{
+	*x = unit->base.x;
+	*y = unit->base.y;
+}
+
+UNIT unit_create_base(DIM x, DIM y, uint32_t team, SPEED max_speed, SPEED speed, SPEED accel, DIM size, HEALTH max_health, HEALTH health, uint64_t attack, uint64_t defense)
 {
 	UNIT new_unit;
 
+	new_unit.base.team = team;
 	new_unit.base.selected = 0;
 	new_unit.base.path = NULL;
 	new_unit.base.x = x;
@@ -42,26 +60,11 @@ UNIT unit_create_base(double x, double y, double max_speed, double speed, double
 
 UNIT unit_create_gunner(UNIT base, uint64_t bullet_speed, uint64_t accuracy)
 {
-	UNIT new_unit;
+	base.type = TYPE_GUNNER;
+	base.gunner.bullet_speed = bullet_speed;
+	base.gunner.accuracy = accuracy;
 
-	new_unit.base.selected = base.base.selected;
-	new_unit.base.path = base.base.path;
-	new_unit.base.x = base.base.x;
-	new_unit.base.y = base.base.y;
-	new_unit.base.max_speed = base.base.max_speed;
-	new_unit.base.speed = base.base.speed;
-	new_unit.base.accel = base.base.accel;
-	new_unit.base.size = base.base.size;
-	new_unit.base.max_health = base.base.max_health;
-	new_unit.base.health = base.base.health;
-	new_unit.base.attack = base.base.attack;
-	new_unit.base.defense = base.base.defense;
-
-	new_unit.type = TYPE_GUNNER;
-	new_unit.gunner.bullet_speed = bullet_speed;
-	new_unit.gunner.accuracy = accuracy;
-
-	return new_unit;
+	return base;
 }
 
 void unit_insert(UNIT_LIST **unit_list, UNIT_LIST **end, UNIT new_unit)
@@ -89,7 +92,7 @@ void unit_insert(UNIT_LIST **unit_list, UNIT_LIST **end, UNIT new_unit)
 		}
 		else
 		{
-			log_output("unit: Failed to use cached unit list ending, parsing through instead");
+			log_output("unit: Failed to use cached unit list ending, parsing through instead\n");
 			while (follower->next != NULL)
 			{
 				follower = follower->next;
@@ -265,9 +268,9 @@ UNIT_LIST *_unit_msort_unit_list_merge(UNIT_LIST *first, UNIT_LIST *second)
 
 UNIT_LIST *_unit_msort_unit_list_compare(UNIT_LIST *first, UNIT_LIST *second)
 {
-	int32_t ax, ay, bx, by;
-	double afx, afy, bfx, bfy;
-	double aoff, boff;
+	DIM_GRAN ax, ay, bx, by;
+	DIM afx, afy, bfx, bfy;
+	DIM aoff, boff;
 
 	if (first == NULL)
 	{
@@ -278,15 +281,15 @@ UNIT_LIST *_unit_msort_unit_list_compare(UNIT_LIST *first, UNIT_LIST *second)
 		return first;
 	}
 
-	aoff = first->unit.base.size * SQRT_RIGHT_ANGLE_TRI;
-	boff = second->unit.base.size * SQRT_RIGHT_ANGLE_TRI;
+	aoff = world_dim_mult(first->unit.base.size, world_sqrt_right_angle_tri);
+	boff = world_dim_mult(second->unit.base.size, world_sqrt_right_angle_tri);
 
 	//sorting criteria
-	ax = (int32_t)(first->unit.base.x - aoff);
-	ay = (int32_t)(first->unit.base.y + aoff);
+	ax = world_get_dim_gran(first->unit.base.x - aoff);
+	ay = world_get_dim_gran(first->unit.base.y + aoff);
 
-	bx = (int32_t)(second->unit.base.x - boff);
-	by = (int32_t)(second->unit.base.y + boff);
+	bx = world_get_dim_gran(second->unit.base.x - boff);
+	by = world_get_dim_gran(second->unit.base.y + boff);
 
 	// first criteria: which "tile y" is less (render order / topwards)
 	if (-ax + ay < -bx + by)
@@ -328,7 +331,7 @@ UNIT_LIST *_unit_msort_unit_list_compare(UNIT_LIST *first, UNIT_LIST *second)
 	return first;
 }
 
-void unit_path_add(UNIT *unit, double x, double y)
+void unit_path_add(UNIT *unit, DIM x, DIM y)
 {
 	if (unit->base.path == NULL)
 	{
@@ -361,7 +364,7 @@ void unit_path_add(UNIT *unit, double x, double y)
 	}
 }
 
-void unit_path_add_front(UNIT *unit, double x, double y)
+void unit_path_add_front(UNIT *unit, DIM x, DIM y)
 {
 	if (unit->base.path == NULL)
 	{
@@ -423,14 +426,14 @@ void unit_path_step(UNIT *unit)
 {
 	if (unit->base.path != NULL)
 	{
-		double x_sep = unit->base.path->x - unit->base.x;
-		double y_sep = unit->base.path->y - unit->base.y;
-		double len = sqrt((x_sep * x_sep) + (y_sep * y_sep));
-		double steps = ceil(len / unit->base.max_speed);
+		DIM x_sep = unit->base.path->x - unit->base.x;
+		DIM y_sep = unit->base.path->y - unit->base.y;
+		DIM len = world_dim_sqrt(world_dim_mult(x_sep, x_sep) + world_dim_mult(y_sep, y_sep));
+		DIM steps = world_dim_ceil(world_dim_div(len, unit->base.max_speed));
 		if (steps > 1)
 		{
-			unit->base.x += x_sep / steps;
-			unit->base.y += y_sep / steps;
+			unit->base.x += world_dim_div(x_sep, steps);
+			unit->base.y += world_dim_div(y_sep, steps);
 		}
 		else
 		{

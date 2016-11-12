@@ -23,8 +23,11 @@
 #define UNIT_WIDTH (10)
 #define UNIT_HEIGHT (10)
 
-#define SCALE_X (3)
-#define SCALE_Y (3)
+#define BUILDING_WIDTH (40)
+#define BUILDING_HEIGHT (30)
+
+#define SCALE_X (1)
+#define SCALE_Y (1)
 
 void render_setup();
 void render_teardown();
@@ -35,6 +38,7 @@ void render_rectangle(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uin
 void render_draw_text(int32_t x, int32_t y, const char *text, uint32_t font_number, uint8_t r, uint8_t g, uint8_t b, uint8_t a, uint8_t x_alignment, uint8_t y_alignment, uint8_t quality, uint8_t instant);
 void render_draw_slope(uint8_t index, int32_t x, int32_t y);
 void render_draw_unit(uint8_t index, int32_t x, int32_t y);
+void render_draw_building(uint8_t index, int32_t x, int32_t y);
 void render_begin_frame();
 void render_end_frame();
 
