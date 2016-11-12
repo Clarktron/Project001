@@ -16,10 +16,10 @@ struct unit_path
 const UNIT unit_defaults[NUM_UNIT_TYPES] =
 {
 	{
-		.tank = {{TYPE_TANK, 0, NULL, 0, 0, 8000, 0, 0, 10000, 100, 100, 2, 2}, 0, 0}
+		.tank = {{TYPE_TANK, 0, 0, NULL, 0, 0, 8000, 0, 0, 50000, 100, 100, 2, 2}, 0, 0}
 	},
 	{
-		.gunner = {{TYPE_GUNNER, 0, NULL, 0, 0, 1000, 0, 0, 5000, 100, 100, 2, 2}, 0, 0}
+		.gunner = {{TYPE_GUNNER, 0, 0, NULL, 0, 0, 1000, 0, 0, 20000, 100, 100, 2, 2}, 0, 0}
 	}
 };
 
@@ -37,10 +37,11 @@ void unit_get_coords(UNIT *unit, DIM *x, DIM *y)
 	*y = unit->base.y;
 }
 
-UNIT unit_create_base(DIM x, DIM y, SPEED max_speed, SPEED speed, SPEED accel, DIM size, HEALTH max_health, HEALTH health, uint64_t attack, uint64_t defense)
+UNIT unit_create_base(DIM x, DIM y, uint32_t team, SPEED max_speed, SPEED speed, SPEED accel, DIM size, HEALTH max_health, HEALTH health, uint64_t attack, uint64_t defense)
 {
 	UNIT new_unit;
 
+	new_unit.base.team = team;
 	new_unit.base.selected = 0;
 	new_unit.base.path = NULL;
 	new_unit.base.x = x;

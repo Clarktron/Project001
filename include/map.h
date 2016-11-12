@@ -66,19 +66,21 @@ MAP *map_load(uint64_t index);
 void map_destroy(MAP *map);
 DIM_GRAN map_get_width(MAP *map);
 DIM_GRAN map_get_height(MAP *map);
+void map_get_offset(MAP *map, int32_t *x_offset, int32_t *y_offset);
+void map_set_offset(MAP *map, int32_t x_offset, int32_t y_offset);
 uint32_t map_get_elevation(MAP *map, DIM_GRAN x, DIM_GRAN y);
 uint8_t map_get_corners(MAP *map, DIM_GRAN x, DIM_GRAN y);
 TILE map_get_tile(MAP *map, DIM_GRAN x, DIM_GRAN y);
-void map_draw(MAP *map, UNIT_LIST *unit_list, BUILDING_LIST *building_list, int32_t x_off, int32_t y_off);
+void map_draw(MAP *map, UNIT_LIST *unit_list, BUILDING_LIST *building_list);
 void map_unit_coords_to_drawing_coords(MAP *map, DIM unit_x, DIM unit_y, int32_t *screen_x, int32_t *screen_y);
+void map_unit_coords_to_ground_coords(MAP *map, DIM unit_x, DIM unit_y, int32_t *screen_x, int32_t *screen_y);
 void map_unit_coords_to_logical_coords(DIM unit_x, DIM unit_y, int32_t *screen_x, int32_t *screen_y);
 void map_logical_coords_to_unit_coords(int32_t screen_x, int32_t screen_y, DIM *unit_x, DIM *unit_y);
 DIM map_get_unit_z(DIM x, DIM y, uint8_t corners);
 void map_update_units(MAP *map, UNIT_LIST *unit_list);
 void map_update_buildings(MAP *map, BUILDING_LIST *building_list);
 uint8_t map_unit_is_on_tile(MAP *map, DIM unit_x, DIM unit_y, DIM_GRAN tile_x, DIM_GRAN tile_y, DIM radius);
-//void map_set_unit_meshes(MAP *map);
-void map_find_path(MAP *map, UNIT *unit, DIM x, DIM y);
-//void map_add_node(MAP *map, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
+void map_find_path(MAP *map, BUILDING_LIST *building_list, UNIT *unit, DIM x, DIM y);
+void map_draw_circle(MAP *map, DIM x, DIM y, DIM r);
 
 #endif

@@ -18,6 +18,7 @@ typedef struct unit_base
 {
 	UNIT_TYPE type;
 	uint8_t selected;
+	uint32_t team;
 	UNIT_PATH *path;
 	DIM x, y;
 	SPEED max_speed;
@@ -68,7 +69,7 @@ const extern UNIT unit_defaults[NUM_UNIT_TYPES];
 uint32_t unit_get_num_types();
 void unit_get_coords(UNIT *unit, DIM *x, DIM *y);
 
-UNIT unit_create_base(DIM x, DIM y, SPEED max_speed, SPEED speed, SPEED accel, DIM size, HEALTH max_health, HEALTH health, uint64_t attack, uint64_t defense);
+UNIT unit_create_base(DIM x, DIM y, uint32_t team, SPEED max_speed, SPEED speed, SPEED accel, DIM size, HEALTH max_health, HEALTH health, uint64_t attack, uint64_t defense);
 UNIT unit_create_gunner(UNIT base, uint64_t bullet_speed, uint64_t accuracy);
 void unit_insert(UNIT_LIST **unit_list, UNIT_LIST **end, UNIT new_unit);
 

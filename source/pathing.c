@@ -224,10 +224,11 @@ void _pathing_add_connecting_node(NODE *node, uint64_t index, DIM dist)
 	node->los_nodes_size++;
 }
 
-WALL_GRID *pathing_generate_wall_grid(MAP *map)
+WALL_GRID *pathing_generate_wall_grid(MAP *map, BUILDING_LIST *building_list)
 {
 	DIM_GRAN i, j;
 	WALL_GRID *grid;
+	BUILDING_LIST *building = building_list;
 
 	grid = malloc(sizeof(WALL_GRID));
 	if (grid == NULL)
@@ -280,6 +281,19 @@ WALL_GRID *pathing_generate_wall_grid(MAP *map)
 				grid->wall_grid[i + j * grid->wall_w] |= 0x02;
 			}
 		}
+	}
+
+	while (building != NULL)
+	{
+		DIM_GRAN x = building->building.base.x;
+		DIM_GRAN y = building->building.base.y;
+
+		grid->wall_grid[x + y * grid->wall_w] |= 0x01;
+		grid->wall_grid[x + y * grid->wall_w] |= 0x02;
+		grid->wall_grid[x + 1 + y * grid->wall_w] |= 0x01;
+		grid->wall_grid[x + (y + 1) * grid->wall_w] |= 0x02;
+
+		building = building->next;
 	}
 	return grid;
 }

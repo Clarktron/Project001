@@ -48,7 +48,7 @@ void pathing_destroy_mesh(NODE_MESH *mesh);
 void pathing_find_path(NODE_MESH *mesh, WALL_GRID *grid, UNIT *unit, DIM x_dest, DIM y_dest);
 //uint64_t pathing_node_mesh_insert(NODE_MESH *mesh, DIM x, DIM y, DIM size, WALL_GRID *grid);
 void pathing_node_mesh_remove_end(NODE_MESH *mesh);
-WALL_GRID *pathing_generate_wall_grid(MAP *map);
+WALL_GRID *pathing_generate_wall_grid(MAP *map, BUILDING_LIST *building_list);
 void pathing_destroy_wall_grid(WALL_GRID *grid);
 void pathing_draw_walls(WALL_GRID *grid);
 void pathing_draw_nodes(NODE_MESH *mesh);
