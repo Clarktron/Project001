@@ -26,8 +26,8 @@
 #define BUILDING_WIDTH (40)
 #define BUILDING_HEIGHT (30)
 
-#define SCALE_X (3)
-#define SCALE_Y (3)
+#define SCALE_X (2)
+#define SCALE_Y (2)
 
 void render_setup();
 void render_teardown();

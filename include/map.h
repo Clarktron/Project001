@@ -6,6 +6,7 @@
 #include "render.h"
 #include "unit.h"
 #include "building.h"
+#include "world.h"
 
 //#define NODE_OFFSET_DRAWING (0.1)
 
@@ -56,36 +57,28 @@ typedef union tile
 	TILE_BASE base;
 } TILE;
 
-typedef struct map_node
-{
-	uint32_t *los_nodes;
-	uint32_t num_los_nodes;
-	double x;
-	double y;
-} MAP_NODE;
-
 typedef struct map MAP;
 
 void map_draw_tile(TILE tile, int32_t x, int32_t y, uint64_t index);
-MAP *map_generate_random(uint64_t w, uint64_t h);
-MAP *map_generate_blank(uint64_t w, uint64_t h);
+MAP *map_generate_random(DIM_GRAN w, DIM_GRAN h);
+MAP *map_generate_blank(DIM_GRAN w, DIM_GRAN h);
 MAP *map_load(uint64_t index);
 void map_destroy(MAP *map);
-uint64_t map_get_width(MAP *map);
-uint64_t map_get_height(MAP *map);
-uint32_t map_get_elevation(MAP *map, uint64_t x, uint64_t y);
-uint8_t map_get_corners(MAP *map, uint64_t x, uint64_t y);
-TILE map_get_tile(MAP *map, uint64_t x, uint64_t y);
+DIM_GRAN map_get_width(MAP *map);
+DIM_GRAN map_get_height(MAP *map);
+uint32_t map_get_elevation(MAP *map, DIM_GRAN x, DIM_GRAN y);
+uint8_t map_get_corners(MAP *map, DIM_GRAN x, DIM_GRAN y);
+TILE map_get_tile(MAP *map, DIM_GRAN x, DIM_GRAN y);
 void map_draw(MAP *map, UNIT_LIST *unit_list, BUILDING_LIST *building_list, int32_t x_off, int32_t y_off);
-void map_unit_coords_to_drawing_coords(MAP *map, double unit_x, double unit_y, int32_t *screen_x, int32_t *screen_y);
-void map_unit_coords_to_logical_coords(double unit_x, double unit_y, int32_t *screen_x, int32_t *screen_y);
-void map_logical_coords_to_unit_coords(int32_t screen_x, int32_t screen_y, double *unit_x, double *unit_y);
-double map_get_unit_z(double x, double y, uint8_t corners);
+void map_unit_coords_to_drawing_coords(MAP *map, DIM unit_x, DIM unit_y, int32_t *screen_x, int32_t *screen_y);
+void map_unit_coords_to_logical_coords(DIM unit_x, DIM unit_y, int32_t *screen_x, int32_t *screen_y);
+void map_logical_coords_to_unit_coords(int32_t screen_x, int32_t screen_y, DIM *unit_x, DIM *unit_y);
+DIM map_get_unit_z(DIM x, DIM y, uint8_t corners);
 void map_update_units(MAP *map, UNIT_LIST *unit_list);
 void map_update_buildings(MAP *map, BUILDING_LIST *building_list);
-uint8_t map_unit_is_on_tile(MAP *map, double unit_x, double unit_y, uint64_t tile_x, uint64_t tile_y, double radius);
-void map_set_unit_meshes(MAP *map);
-void map_find_path(MAP *map, UNIT *unit, double x, double y);
-void map_add_node(MAP *map, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
+uint8_t map_unit_is_on_tile(MAP *map, DIM unit_x, DIM unit_y, DIM_GRAN tile_x, DIM_GRAN tile_y, DIM radius);
+//void map_set_unit_meshes(MAP *map);
+void map_find_path(MAP *map, UNIT *unit, DIM x, DIM y);
+//void map_add_node(MAP *map, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
 
 #endif

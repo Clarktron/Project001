@@ -12,13 +12,13 @@
 
 #define MAP_NAME_LEN (260)
 
-#define SQRT_RIGHT_ANGLE_TRI (0.70710678)
+//#define SQRT_RIGHT_ANGLE_TRI (0.70710678)
 
 struct map
 {
 	TILE *map;
-	uint64_t map_width;
-	uint64_t map_height;
+	DIM_GRAN map_width;
+	DIM_GRAN map_height;
 	WALL_GRID *grid;
 	NODE_MESH *mesh;
 };
@@ -99,10 +99,10 @@ void map_draw_tile(TILE tile, int32_t x, int32_t y, uint64_t index)
 	// ---
 }
 
-MAP *map_generate_random(uint64_t w, uint64_t h)
+MAP *map_generate_random(DIM_GRAN w, DIM_GRAN h)
 {
 	MAP *map = NULL;
-	uint64_t i, j;
+	DIM_GRAN i, j;
 
 	map = malloc(sizeof(MAP));
 	if (map == NULL)
@@ -156,9 +156,9 @@ map_generate_random_error_1:
 	return NULL;
 }
 
-MAP *map_generate_blank(uint64_t w, uint64_t h)
+MAP *map_generate_blank(DIM_GRAN w, DIM_GRAN h)
 {
-	uint64_t i, j;
+	DIM_GRAN i, j;
 	MAP *map;
 	if (w == 0 || h == 0)
 	{
@@ -187,7 +187,7 @@ MAP *map_generate_blank(uint64_t w, uint64_t h)
 	{
 		for (i = 0; i < w; ++i)
 		{
-			uint64_t index = i + j * w;
+			DIM_GRAN index = i + j * w;
 			map->map[index].type = TYPE_GRASS;
 			map->map[index].base.elevation = 0;
 			map->map[index].base.corners = CORNER_FLAT;
@@ -207,8 +207,8 @@ MAP *map_load(uint64_t index)
 	char str[MAP_NAME_LEN];
 	FILE *file;
 	uint32_t version;
-	uint64_t width = 0, height = 0;
-	uint32_t i, j;
+	DIM_GRAN width = 0, height = 0;
+	DIM_GRAN i, j;
 
 	map = malloc(sizeof(MAP));
 	if (map == NULL)
@@ -234,7 +234,7 @@ MAP *map_load(uint64_t index)
 	}
 	if (version == 0)
 	{
-		if (fscanf(file, "%llu %llu", &width, &height) < 2)
+		if (fscanf(file, "%i %i", &width, &height) < 2)
 		{
 			log_output("map: Could not read width & height from file. feof: %i ferror: %i\n", feof(file), ferror(file));
 			goto map_load_error_2;
@@ -263,7 +263,7 @@ MAP *map_load(uint64_t index)
 	}
 	else if (version == 1)
 	{
-		if (fscanf(file, "%llu %llu", &width, &height) < 2)
+		if (fscanf(file, "%i %i", &width, &height) < 2)
 		{
 			log_output("map: Could not read width & height from file. feof: %i ferror: %i\n", feof(file), ferror(file));
 			goto map_load_error_2;
@@ -323,17 +323,17 @@ void map_destroy(MAP *map)
 	}
 }
 
-uint64_t map_get_width(MAP *map)
+DIM_GRAN map_get_width(MAP *map)
 {
 	return map->map_width;
 }
 
-uint64_t map_get_height(MAP *map)
+DIM_GRAN map_get_height(MAP *map)
 {
 	return map->map_height;
 }
 
-uint32_t map_get_elevation(MAP *map, uint64_t x, uint64_t y)
+uint32_t map_get_elevation(MAP *map, DIM_GRAN x, DIM_GRAN y)
 {
 	if (x >= map->map_width || y >= map->map_height)
 	{
@@ -342,18 +342,18 @@ uint32_t map_get_elevation(MAP *map, uint64_t x, uint64_t y)
 	return map->map[x + y * map->map_width].base.elevation;
 }
 
-uint8_t map_get_corners(MAP *map, uint64_t x, uint64_t y)
+uint8_t map_get_corners(MAP *map, DIM_GRAN x, DIM_GRAN y)
 {
-	if (x >= map->map_width || y >= map->map_height)
+	if (x < 0 || x < 0 || x >= map->map_width || y >= map->map_height)
 	{
 		return 0;
 	}
 	return map->map[x + y * map->map_width].base.corners;
 }
 
-TILE map_get_tile(MAP *map, uint64_t x, uint64_t y)
+TILE map_get_tile(MAP *map, DIM_GRAN x, DIM_GRAN y)
 {
-	if (x >= map->map_width || y >= map->map_height)
+	if (x < 0 || y < 0 || x >= map->map_width || y >= map->map_height)
 	{
 		TILE blank;
 		memset(&blank, 0, sizeof(TILE));
@@ -364,8 +364,8 @@ TILE map_get_tile(MAP *map, uint64_t x, uint64_t y)
 
 void map_draw(MAP *map, UNIT_LIST *unit_list, BUILDING_LIST *building_list, int32_t x_off, int32_t y_off)
 {
-	uint64_t i, j, k, l, m;
-	uint64_t max;
+	DIM_GRAN i, j, k, l, m;
+	DIM_GRAN max;
 	UNIT_LIST *unit_top = NULL;
 	BUILDING_LIST *building_top = NULL;
 
@@ -399,9 +399,9 @@ void map_draw(MAP *map, UNIT_LIST *unit_list, BUILDING_LIST *building_list, int3
 				i = k;
 				j = l - map->map_width + k + 1;
 			}
-			uint64_t index = i + j * map->map_width;
-			int32_t x = (int32_t)(i * (TILE_WIDTH / 2) + TILE_WIDTH / 2 + j * (TILE_WIDTH / 2));
-			int32_t y = (int32_t)(j * (TILE_HEIGHT / 2) - i * (TILE_HEIGHT / 2));
+			DIM_GRAN index = i + j * map->map_width;
+			DIM_GRAN x = i * (TILE_WIDTH / 2) + TILE_WIDTH / 2 + j * (TILE_WIDTH / 2);
+			DIM_GRAN y = j * (TILE_HEIGHT / 2) - i * (TILE_HEIGHT / 2);
 			if (x - x_off + TILE_WIDTH / 2 >= 0 && y - y_off + TILE_HEIGHT / 2 >= 0 && x - x_off - TILE_WIDTH / 2 < SCREEN_WIDTH && y - y_off - TILE_HEIGHT / 2 - (int32_t)map->map[index].base.elevation * TILE_DEPTH < SCREEN_HEIGHT)
 			{
 				map_draw_tile(map->map[index], x - x_off, y - y_off, map->map[index].base.elevation);
@@ -412,8 +412,8 @@ void map_draw(MAP *map, UNIT_LIST *unit_list, BUILDING_LIST *building_list, int3
 				{
 					break;
 				}
-				uint32_t building_x = building_top->building.base.x;
-				uint32_t building_y = building_top->building.base.y;
+				DIM_GRAN building_x = building_top->building.base.x;
+				DIM_GRAN building_y = building_top->building.base.y;
 
 				int32_t x_coord, y_coord;
 				map_unit_coords_to_drawing_coords(map, building_x, building_y, &x_coord, &y_coord);
@@ -433,8 +433,8 @@ void map_draw(MAP *map, UNIT_LIST *unit_list, BUILDING_LIST *building_list, int3
 				{
 					break;
 				}
-				double unit_x = unit_top->unit.base.x;
-				double unit_y = unit_top->unit.base.y;
+				DIM unit_x = unit_top->unit.base.x;
+				DIM unit_y = unit_top->unit.base.y;
 
 				int32_t x_coord, y_coord;
 				map_unit_coords_to_drawing_coords(map, unit_x, unit_y, &x_coord, &y_coord);
@@ -460,8 +460,8 @@ void map_draw(MAP *map, UNIT_LIST *unit_list, BUILDING_LIST *building_list, int3
 	{
 		if (unit_top->unit.base.selected)
 		{
-			double unit_x = unit_top->unit.base.x;
-			double unit_y = unit_top->unit.base.y;
+			DIM unit_x = unit_top->unit.base.x;
+			DIM unit_y = unit_top->unit.base.y;
 
 			int32_t x_coord, y_coord;
 			map_unit_coords_to_drawing_coords(map, unit_x, unit_y, &x_coord, &y_coord);
@@ -478,8 +478,8 @@ void map_draw(MAP *map, UNIT_LIST *unit_list, BUILDING_LIST *building_list, int3
 	{
 		if (building_top->building.base.selected)
 		{
-			uint32_t building_x = building_top->building.base.x;
-			uint32_t building_y = building_top->building.base.y;
+			DIM_GRAN building_x = building_top->building.base.x;
+			DIM_GRAN building_y = building_top->building.base.y;
 
 			int32_t x_coord, y_coord;
 			map_unit_coords_to_drawing_coords(map, building_x, building_y, &x_coord, &y_coord);
@@ -492,36 +492,39 @@ void map_draw(MAP *map, UNIT_LIST *unit_list, BUILDING_LIST *building_list, int3
 	}
 }
 
-void map_unit_coords_to_drawing_coords(MAP *map, double unit_x, double unit_y, int32_t *screen_x, int32_t *screen_y)
+void map_unit_coords_to_drawing_coords(MAP *map, DIM unit_x, DIM unit_y, int32_t *screen_x, int32_t *screen_y)
 {
 	int32_t elevation = 0;
+	DIM_GRAN x_gran = world_get_dim_gran(unit_x);
+	DIM_GRAN y_gran = world_get_dim_gran(unit_y);
+
 	if (screen_x == NULL || screen_y == NULL)
 	{
 		log_output("map: Parameter was NULL: screen_x = %i, screen_y = %i\n", screen_x, screen_y);
 		return;
 	}
-	if ((int32_t)unit_x >= 0 && (int32_t)unit_x < map->map_width && (int32_t)unit_y >= 0 && (int32_t)unit_y < map->map_height)
+	if (x_gran >= 0 && x_gran < map->map_width && y_gran >= 0 && y_gran < map->map_height)
 	{
-		elevation = map->map[(uint64_t)unit_x + (uint64_t)unit_y * map->map_width].base.elevation;
+		elevation = map->map[x_gran + y_gran * map->map_width].base.elevation;
 	}
 	map_unit_coords_to_logical_coords(unit_x, unit_y, screen_x, screen_y);
 	*screen_y -= elevation * TILE_DEPTH;
 	*screen_y -= UNIT_HEIGHT / 2;
-	*screen_y -= (int32_t)round(map_get_unit_z(unit_x, unit_y, map_get_corners(map, (uint64_t)unit_x, (uint64_t)unit_y)) * TILE_DEPTH);
+	*screen_y -= world_dim_round(map_get_unit_z(unit_x, unit_y, map_get_corners(map, x_gran, y_gran)) * TILE_DEPTH);
 }
 
-void map_unit_coords_to_logical_coords(double unit_x, double unit_y, int32_t *screen_x, int32_t *screen_y)
+void map_unit_coords_to_logical_coords(DIM unit_x, DIM unit_y, int32_t *screen_x, int32_t *screen_y)
 {
 	if (screen_x == NULL || screen_y == NULL)
 	{
 		log_output("map: Parameter was NULL: screen_x = %i, screen_y = %i\n", screen_x, screen_y);
 		return;
 	}
-	*screen_x = (int32_t)round(unit_x * (TILE_WIDTH / 2) + unit_y * (TILE_WIDTH / 2));
-	*screen_y = (int32_t)round(unit_y * (TILE_HEIGHT / 2) - unit_x * (TILE_HEIGHT / 2));
+	*screen_x = world_dim_round(unit_x * (TILE_WIDTH / 2) + unit_y * (TILE_WIDTH / 2));
+	*screen_y = world_dim_round(unit_y * (TILE_HEIGHT / 2) - unit_x * (TILE_HEIGHT / 2));
 }
 
-void map_logical_coords_to_unit_coords(int32_t screen_x, int32_t screen_y, double *unit_x, double *unit_y)
+void map_logical_coords_to_unit_coords(int32_t screen_x, int32_t screen_y, DIM *unit_x, DIM *unit_y)
 {
 	if (unit_x == NULL || unit_y == NULL)
 	{
@@ -529,109 +532,110 @@ void map_logical_coords_to_unit_coords(int32_t screen_x, int32_t screen_y, doubl
 		return;
 	}
 
-	*unit_x = (double)screen_x / TILE_WIDTH - (double)screen_y / TILE_HEIGHT;
-	*unit_y = (double)screen_y / TILE_HEIGHT + (double)screen_x / TILE_WIDTH;
+	*unit_x = world_dim_builder(screen_x, 0) / TILE_WIDTH - world_dim_builder(screen_y, 0) / TILE_HEIGHT;
+	*unit_y = world_dim_builder(screen_y, 0) / TILE_HEIGHT + world_dim_builder(screen_x, 0) / TILE_WIDTH;
 }
 
-double map_get_unit_z(double x, double y, uint8_t corners)
+DIM map_get_unit_z(DIM x, DIM y, uint8_t corners)
 {
-	x = fmod(x, 1);
-	y = fmod(y, 1);
+	DIM_FINE x_fine = world_get_dim_fine(x);
+	DIM_FINE y_fine = world_get_dim_fine(y);
+	DIM one = world_dim_builder(1, 0);
 	switch (corners)
 	{
 	case CORNER_FLAT:
-		return (0.0);
+		return (0);
 	case CORNER_L:
-		if ((-x + 1.0) + (-y + 1.0) > 1.0)
+		if ((-x_fine + one) + (-y_fine + one) > one)
 		{
-			return ((-x + 1.0) + (-y + 1.0) - 1.0);
+			return ((-x_fine + one) + (-y_fine + one) - one);
 		}
-		return (0.0);
+		return (0);
 	case CORNER_R:
-		if (x + y > 1.0)
+		if (x_fine + y_fine > one)
 		{
-			return (x + y - 1.0);
+			return (x_fine + y_fine - one);
 		}
-		return (0.0);
+		return (0);
 	case CORNER_U:
-		if (x + (-y + 1.0) > 1.0)
+		if (x_fine + (-y_fine + one) > one)
 		{
-			return (x + (-y + 1.0) - 1.0);
+			return (x_fine + (-y_fine + one) - one);
 		}
-		return (0.0);
+		return (0);
 	case CORNER_D:
-		if ((-x + 1.0) + y > 1.0)
+		if ((-x_fine + one) + y_fine > one)
 		{
-			return ((-x + 1.0) + y - 1.0);
+			return ((-x_fine + one) + y_fine - one);
 		}
-		return (0.0);
+		return (0);
 	case CORNER_LU:
-		return (-y + 1.0);
+		return (-y_fine + one);
 	case CORNER_UR:
-		return (x);
+		return (x_fine);
 	case CORNER_RD:
-		return (y);
+		return (y_fine);
 	case CORNER_LD:
-		return (-x + 1.0);
+		return (-x_fine + one);
 	case CORNER_LR:
-		if ((-x + 1.0) + (-y + 1.0) > 1.0)
+		if ((-x_fine + one) + (-y_fine + one) > one)
 		{
-			return ((-x + 1.0) + (-y + 1.0) - 1.0);
+			return ((-x_fine + one) + (-y_fine + one) - one);
 		}
-		return (x + y - 1.0);
+		return (x_fine + y_fine - one);
 	case CORNER_UD:
-		if (x + (-y + 1.0) > 1.0)
+		if (x_fine + (-y_fine + one) > one)
 		{
-			return (x + (-y + 1.0) - 1.0);
+			return (x_fine + (-y_fine + one) - one);
 		}
-		return ((-x + 1.0) + y - 1.0);
+		return ((-x_fine + one) + y_fine - one);
 	case CORNER_LRD:
-		if (x + (-y + 1.0) > 1.0)
+		if (x_fine + (-y_fine + one) > one)
 		{
-			return (1.0);
+			return (one);
 		}
-		return ((-x + 1.0) + y - 1.0);
+		return ((-x_fine + one) + y_fine - one);
 	case CORNER_LUD:
-		if (x + y > 1.0)
+		if (x_fine + y_fine > one)
 		{
-			return (1.0);
+			return (one);
 		}
-		return ((-x + 1.0) + (-y + 1.0));
+		return ((-x_fine + one) + (-y_fine + one));
 	case CORNER_LUR:
-		if ((-x + 1.0) + y > 1.0)
+		if ((-x_fine + one) + y_fine > one)
 		{
-			return (1.0);
+			return (one);
 		}
-		return (x + (-y + 1.0) - 1.0);
+		return (x_fine + (-y_fine + one) - one);
 	case CORNER_URD:
-		if ((-x + 1.0) + (-y + 1.0) > 1.0)
+		if ((-x_fine + one) + (-y_fine + one) > one)
 		{
-			return (1.0);
+			return (one);
 		}
-		return (x + y - 1.0);
+		return (x_fine + y_fine - one);
 	case CORNER_UR2D:
-		return (x + y);
+		return (x_fine + y_fine);
 	case CORNER_LU2R:
-		return (x + (-y + 1.0));
+		return (x_fine + (-y_fine + one));
 	case CORNER_L2UD:
-		return ((-x + 1.0) + (-y + 1.0));
+		return ((-x_fine + one) + (-y_fine + one));
 	case CORNER_LRD2:
-		return ((-x + 1.0) + y);
+		return ((-x_fine + one) + y_fine);
 	case CORNER_BASE:
 	default:
-		return (0.0);
+		return (0);
 	}
 }
 
-void _map_update_unit_count(MAP *map, double x, double y, double radius)
+void _map_update_unit_count(MAP *map, DIM x, DIM y, DIM radius)
 {
-	uint64_t x_grid = (uint64_t)x;
-	uint64_t y_grid = (uint64_t)y;
-	uint64_t x_start = 0;
-	uint64_t y_start = 0;
-	uint64_t x_end = map->map_width - 1;
-	uint64_t y_end = map->map_height - 1;
-	uint64_t i, j;
+	DIM_GRAN x_grid = world_get_dim_gran(x);
+	DIM_GRAN y_grid = world_get_dim_gran(y);
+	DIM_GRAN x_start = 0;
+	DIM_GRAN y_start = 0;
+	DIM_GRAN x_end = map->map_width - 1;
+	DIM_GRAN y_end = map->map_height - 1;
+	DIM_GRAN i, j;
 
 	if (x_grid >= map->map_width || y_grid >= map->map_height)
 	{
@@ -678,7 +682,7 @@ void _map_update_unit_count(MAP *map, double x, double y, double radius)
 void map_update_units(MAP *map, UNIT_LIST *unit_list)
 {
 	UNIT_LIST *follower = unit_list;
-	uint64_t i, j;
+	DIM_GRAN i, j;
 
 	for (j = 0; j < map->map_height; ++j)
 	{
@@ -690,7 +694,9 @@ void map_update_units(MAP *map, UNIT_LIST *unit_list)
 
 	while (follower != NULL)
 	{
-		_map_update_unit_count(map, follower->unit.base.x, follower->unit.base.y, follower->unit.base.size);
+		DIM_GRAN x = follower->unit.base.x;
+		DIM_GRAN y = follower->unit.base.y;
+		_map_update_unit_count(map, x, y, follower->unit.base.size);
 		follower = follower->next;
 	}
 }
@@ -698,7 +704,7 @@ void map_update_units(MAP *map, UNIT_LIST *unit_list)
 void map_update_buildings(MAP *map, BUILDING_LIST *building_list)
 {
 	BUILDING_LIST *follower = building_list;
-	uint64_t i, j;
+	DIM_GRAN i, j;
 
 	for (j = 0; j < map->map_height; ++j)
 	{
@@ -710,24 +716,24 @@ void map_update_buildings(MAP *map, BUILDING_LIST *building_list)
 
 	while (follower != NULL)
 	{
-		uint32_t x = follower->building.base.x;
-		uint32_t y = follower->building.base.y;
+		DIM_GRAN x = follower->building.base.x;
+		DIM_GRAN y = follower->building.base.y;
 		map->map[x + y * map->map_width].base.num_buildings++;
 		follower = follower->next;
 	}
 }
 
-uint8_t map_unit_is_on_tile(MAP *map, double unit_x, double unit_y, uint64_t tile_x, uint64_t tile_y, double radius)
+uint8_t map_unit_is_on_tile(MAP *map, DIM unit_x, DIM unit_y, DIM_GRAN tile_x, DIM_GRAN tile_y, DIM radius)
 {
-	uint64_t current_x;
-	uint64_t current_y;
-	double x1, x2, y1, y2;
-	double off = SQRT_RIGHT_ANGLE_TRI * radius;
-	double unit_x_off = (unit_x - off);
-	double unit_y_off = (unit_y + off);
+	DIM_GRAN current_x;
+	DIM_GRAN current_y;
+	DIM x1, x2, y1, y2;
+	DIM off = world_dim_mult(world_sqrt_right_angle_tri, radius);
+	DIM unit_x_off = (unit_x - off);
+	DIM unit_y_off = (unit_y + off);
 
-	current_x = (uint64_t)unit_x_off;
-	current_y = (uint64_t)unit_y_off;
+	current_x = world_get_dim_gran(unit_x_off);
+	current_y = world_get_dim_gran(unit_y_off);
 	if (current_x >= map->map_width || current_y >= map->map_height)
 	{
 		return 0;
@@ -751,10 +757,10 @@ uint8_t map_unit_is_on_tile(MAP *map, double unit_x, double unit_y, uint64_t til
 	}
 
 	// We are right next to the tile requested
-	x1 = (double)tile_x;
-	x2 = (double)tile_x + 1;
-	y1 = (double)tile_y;
-	y2 = (double)tile_y + 1;
+	x1 = world_dim_builder(tile_x, 0);
+	x2 = world_dim_builder(tile_x + 1, 0);
+	y1 = world_dim_builder(tile_y, 0);
+	y2 = world_dim_builder(tile_y + 1, 0);
 
 	if (unit_x_off < x1 || unit_x_off > x2 || unit_y_off < y1 || unit_y_off > y2)
 	{
@@ -766,7 +772,7 @@ uint8_t map_unit_is_on_tile(MAP *map, double unit_x, double unit_y, uint64_t til
 	return 1;
 }
 
-void map_set_unit_meshes(MAP *map, UNIT_TYPE type)
+/*void map_set_unit_meshes(MAP *map, UNIT_TYPE type)
 {
 	if (map->grid == NULL)
 	{
@@ -774,39 +780,41 @@ void map_set_unit_meshes(MAP *map, UNIT_TYPE type)
 	}
 	if (map->mesh == NULL)
 	{
-		map->mesh = pathing_create_disconnected_mesh(map->grid, unit_defaults[type].base.size);
+		//map->mesh = pathing_create_disconnected_mesh(map->grid, unit_defaults[type].base.size);
 	}
-}
+}*/
 
-void map_find_path(MAP *map, UNIT *unit, double x, double y)
+void map_find_path(MAP *map, UNIT *unit, DIM x, DIM y)
 {
-	NODE_MESH *mesh = NULL;
+	NODE_MESH *mesh;
 	WALL_GRID *grid;
+	DIM_GRAN w = map_get_width(map);
+	DIM_GRAN h = map_get_height(map);
 	//uint64_t start, end;
 
 	if (x < unit->base.size)
 	{
 		x = unit->base.size + NODE_OFFSET_CONTACT;
 	}
-	else if (x > map_get_width(map) - unit->base.size - NODE_OFFSET_CONTACT)
+	else if (x > world_dim_builder(w, 0) - unit->base.size - NODE_OFFSET_CONTACT)
 	{
-		x = (double)map_get_width(map) - unit->base.size - NODE_OFFSET_CONTACT;
+		x = world_dim_builder(w, 0) - unit->base.size - NODE_OFFSET_CONTACT;
 	}
 	if (y < unit->base.size)
 	{
 		y = unit->base.size + NODE_OFFSET_CONTACT;
 	}
-	else if (y > map_get_height(map) - unit->base.size - NODE_OFFSET_CONTACT)
+	else if (y > world_dim_builder(h, 0) - unit->base.size - NODE_OFFSET_CONTACT)
 	{
-		y = (double)map_get_height(map) - unit->base.size - NODE_OFFSET_CONTACT;
+		y = world_dim_builder(h, 0) - unit->base.size - NODE_OFFSET_CONTACT;
 	}
 
-	map_set_unit_meshes(map, unit->type);
+	//map_set_unit_meshes(map, unit->type);
 
-	grid = map->grid;
+	grid = pathing_generate_wall_grid(map);
 	//pathing_draw_walls(grid);
 
-	mesh = map->mesh;
+	mesh = pathing_create_mesh(grid, w, h, unit->base.size);
 
 	//pathing_draw_nodes(mesh);
 
@@ -822,9 +830,12 @@ void map_find_path(MAP *map, UNIT *unit, double x, double y)
 	//pathing_node_mesh_remove(mesh, start);
 
 	//pathing_draw_nodes(mesh);
+
+	pathing_destroy_wall_grid(grid);
+	pathing_destroy_mesh(mesh);
 }
 
-void map_add_node(MAP *map, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
+/*void map_add_node(MAP *map, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
 {
 	uint64_t i;
 	for (i = 0; i < NUM_UNIT_TYPES; ++i)
@@ -847,4 +858,4 @@ void map_add_node(MAP *map, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
 			pathing_node_mesh_insert(mesh, x2, y2, size, grid);
 		}
 	}
-}
+}*/

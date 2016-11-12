@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 const BUILDING building_defaults[NUM_BUILDING_TYPES] = 
 {
@@ -17,7 +18,7 @@ const BUILDING building_defaults[NUM_BUILDING_TYPES] =
 BUILDING_LIST *_building_msort_building_list_compare(BUILDING_LIST *first, BUILDING_LIST *second);
 BUILDING_LIST *_building_msort_building_list_merge(BUILDING_LIST *first, BUILDING_LIST *second);
 
-BUILDING building_create_base(uint32_t x, uint32_t y, uint32_t index, uint32_t max_health, uint32_t health)
+BUILDING building_create_base(DIM_GRAN x, DIM_GRAN y, uint32_t index, HEALTH max_health, HEALTH health)
 {
 	BUILDING new_building;
 

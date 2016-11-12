@@ -38,6 +38,11 @@ DIM world_dim_sqrt(DIM d)
 	DIM guess = 10 * FINE_SIZE;
 	DIM prev_guess = 0;
 
+	if (d == 0)
+	{
+		return 0;
+	}
+
 	while (guess != prev_guess)
 	{
 		int64_t temp;
@@ -47,7 +52,7 @@ DIM world_dim_sqrt(DIM d)
 		temp = guess - world_dim_div((DIM)top, (DIM)bottom);
 
 		prev_guess = guess;
-		guess = temp;
+		guess = (DIM)temp;
 	}
 
 	return guess - 1;
@@ -60,7 +65,19 @@ DIM world_dim_ceil(DIM d)
 
 	if (f)
 	{
-		return (DIM)((g + 1) * FINE_SIZE);
+		return (DIM)((g * FINE_SIZE) + 1);
 	}
 	return (DIM)(g * FINE_SIZE);
+}
+
+DIM_GRAN world_dim_round(DIM d)
+{
+	DIM_FINE f = world_get_dim_fine(d);
+	DIM_GRAN g = world_get_dim_gran(d);
+
+	if (f >= FINE_SIZE / 2)
+	{
+		return g + 1;
+	}
+	return g;
 }

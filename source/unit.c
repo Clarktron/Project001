@@ -16,7 +16,7 @@ struct unit_path
 const UNIT unit_defaults[NUM_UNIT_TYPES] =
 {
 	{
-		.tank = {{TYPE_TANK, 0, NULL, 0, 0, 800, 0, 0, 10000, 100, 100, 2, 2}, 0, 0}
+		.tank = {{TYPE_TANK, 0, NULL, 0, 0, 8000, 0, 0, 10000, 100, 100, 2, 2}, 0, 0}
 	},
 	{
 		.gunner = {{TYPE_GUNNER, 0, NULL, 0, 0, 1000, 0, 0, 5000, 100, 100, 2, 2}, 0, 0}

@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "world.h"
+
 typedef enum building_type
 {
 	TYPE_HOUSE,
@@ -15,9 +17,9 @@ typedef struct building_base
 	BUILDING_TYPE type;
 	uint8_t selected;
 	uint32_t index;
-	uint32_t x, y;
-	uint32_t max_health;
-	uint32_t health;
+	DIM_GRAN x, y;
+	HEALTH max_health;
+	HEALTH health;
 } BUILDING_BASE;
 
 typedef struct buliding_house
@@ -49,7 +51,7 @@ struct building_list
 
 const extern BUILDING building_defaults[NUM_BUILDING_TYPES];
 
-BUILDING building_create_base(uint32_t x, uint32_t y, uint32_t index, uint32_t max_health, uint32_t health);
+BUILDING building_create_base(DIM_GRAN x, DIM_GRAN y, uint32_t index, HEALTH max_health, HEALTH health);
 BUILDING building_create_house(BUILDING base);
 void building_insert(BUILDING_LIST **building_list, BUILDING_LIST **end, BUILDING new_building);
 void building_msort_building_list(BUILDING_LIST **building_list, BUILDING_LIST **end);
