@@ -64,7 +64,7 @@ void _game_draw_mouse(GAME *game);
 void _game_update_mouse(GAME *game);
 void _game_create_unit(GAME *game , UNIT unit);
 void _game_create_unit_gunner(GAME *game, DIM x, DIM y);
-void _game_unit_path_update(GAME *game);
+void _game_unit_update(GAME *game);
 void _game_pathfind(GAME *game, UNIT *unit, DIM x, DIM y);
 
 void _game_create_building(GAME *game, BUILDING building);
@@ -156,9 +156,20 @@ void _game_mouse_button_event_cb(SDL_MouseButtonEvent ev, void *ptr)
 			UNIT_LIST *unit_list = game->unit_list;
 			while (unit_list != NULL)
 			{
-				int32_t x, y;
-				game_unit_coords_to_drawing_coords(game, unit_list->unit.base.x, unit_list->unit.base.y, &x, &y);
-				if (((x >= game->mouse.left_x && x <= game->mouse.cur_x) || (x >= game->mouse.cur_x && x <= game->mouse.left_x)) && ((y >= game->mouse.left_y && y <= game->mouse.cur_y) || (y >= game->mouse.cur_y && y <= game->mouse.left_y)))
+				int32_t x1, x2, y1, y2;
+				int32_t temp;
+				int32_t bx1, bx2, by1, by2;
+				game_unit_coords_to_drawing_coords(game, unit_list->unit.base.x - unit_list->unit.base.size, unit_list->unit.base.y - unit_list->unit.base.size, &x1, &temp);
+				game_unit_coords_to_drawing_coords(game, unit_list->unit.base.x + unit_list->unit.base.size, unit_list->unit.base.y + unit_list->unit.base.size, &x2, &temp);
+				game_unit_coords_to_drawing_coords(game, unit_list->unit.base.x + unit_list->unit.base.size, unit_list->unit.base.y - unit_list->unit.base.size, &temp, &y1);
+				game_unit_coords_to_drawing_coords(game, unit_list->unit.base.x - unit_list->unit.base.size, unit_list->unit.base.y + unit_list->unit.base.size, &temp, &y2);
+
+				bx1 = min(game->mouse.left_x, game->mouse.cur_x);
+				bx2 = max(game->mouse.left_x, game->mouse.cur_x);
+				by1 = min(game->mouse.left_y, game->mouse.cur_y);
+				by2 = max(game->mouse.left_y, game->mouse.cur_y);
+				
+				if ((x2 > bx1 && x1 < bx2) && (y2 > by1 && y1 < by2))
 				{
 					unit_list->unit.base.selected = 1;
 				}
@@ -182,6 +193,7 @@ void _game_mouse_button_event_cb(SDL_MouseButtonEvent ev, void *ptr)
 		{
 			game->mouse.right = MOUSE_UP;
 			UNIT_LIST *unit_list = game->unit_list;
+			UNIT_LIST *target = game->unit_list;
 			while (unit_list != NULL)
 			{
 				if (unit_list->unit.base.selected == 1)
@@ -189,6 +201,30 @@ void _game_mouse_button_event_cb(SDL_MouseButtonEvent ev, void *ptr)
 					DIM x, y;
 					game_screen_coords_to_unit_coords(game, game->mouse.cur_x, game->mouse.cur_y, &x, &y);
 					_game_pathfind(game, &unit_list->unit, x, y);
+					while (target != NULL)
+					{
+						if (target != unit_list)
+						{
+							int32_t x1, x2, y1, y2;
+							int32_t temp;
+							int32_t bx, by;
+							game_unit_coords_to_drawing_coords(game, target->unit.base.x - target->unit.base.size, target->unit.base.y - target->unit.base.size, &x1, &temp);
+							game_unit_coords_to_drawing_coords(game, target->unit.base.x + target->unit.base.size, target->unit.base.y + target->unit.base.size, &x2, &temp);
+							game_unit_coords_to_drawing_coords(game, target->unit.base.x + target->unit.base.size, target->unit.base.y - target->unit.base.size, &temp, &y1);
+							game_unit_coords_to_drawing_coords(game, target->unit.base.x - target->unit.base.size, target->unit.base.y + target->unit.base.size, &temp, &y2);
+
+							bx = game->mouse.cur_x;
+							by = game->mouse.cur_y;
+
+							if ((bx > x1 && bx < x2) && (by > y1 && by < y2))
+							{
+								unit_attack_target(&(unit_list->unit), target);
+								// only attack one unit
+								break;
+							}
+						}
+						target = target->next;
+					}
 				}
 				unit_list = unit_list->next;
 			}
@@ -298,10 +334,13 @@ void _game_play(GAME *game, STATE *state)
 
 	unit_msort_unit_list(&(game->unit_list), &(game->unit_list_end));
 	building_msort_building_list(&(game->building_list), &(game->building_list_end));
-	_game_unit_path_update(game);
+	_game_unit_update(game);
+
+	unit_destroy_dead_units(&(game->unit_list), &(game->unit_list_end));
 
 	map_update_units(game->map, game->unit_list);
 	map_update_buildings(game->map, game->building_list);
+
 	map_draw(game->map, game->unit_list, game->building_list);
 	_game_draw_mouse(game);
 
@@ -522,15 +561,12 @@ void _game_create_unit_gunner(GAME *game, DIM x, DIM y)
 	_game_create_unit(game, unit);
 }
 
-void _game_unit_path_update(GAME *game)
+void _game_unit_update(GAME *game)
 {
 	UNIT_LIST *head = game->unit_list;
 	while (head != NULL)
 	{
-		if (head->unit.base.path != NULL)
-		{
-			unit_path_step(&head->unit);
-		}
+		unit_do_action(&(head->unit));
 		head = head->next;
 	}
 }

@@ -4,27 +4,23 @@
 
 #include <stdlib.h>
 #include <string.h>
-//#include <math.h>
-
-struct unit_path
-{
-	UNIT_PATH *next;
-	DIM x;
-	DIM y;
-};
 
 const UNIT unit_defaults[NUM_UNIT_TYPES] =
 {
 	{
-		.tank = {{TYPE_TANK, 0, 0, NULL, 0, 0, 8000, 0, 0, 50000, 100, 100, 2, 2}, 0, 0}
+		.tank = {{TYPE_TANK, 0, UNIT_ACTION_NONE, 0, NULL, 0, 0, 8000, 0, 0, 50000, 100, 100, 20, 5, 500000, 5}, 0, 0}
 	},
 	{
-		.gunner = {{TYPE_GUNNER, 0, 0, NULL, 0, 0, 1000, 0, 0, 20000, 100, 100, 2, 2}, 0, 0}
+		.gunner = {{TYPE_GUNNER, 0, UNIT_ACTION_NONE, 0, NULL, 0, 0, 1000, 0, 0, 25000, 100, 100, 5, 5, 200000, 5}, 0, 0}
 	}
 };
 
 UNIT_LIST *_unit_msort_unit_list_compare(UNIT_LIST *first, UNIT_LIST *second);
 UNIT_LIST *_unit_msort_unit_list_merge(UNIT_LIST *first, UNIT_LIST *second);
+
+void _unit_path_step(UNIT *unit);
+void _unit_attack_move(UNIT *unit);
+void _unit_attack_target(UNIT *unit);
 
 uint32_t unit_get_num_types()
 {
@@ -37,12 +33,13 @@ void unit_get_coords(UNIT *unit, DIM *x, DIM *y)
 	*y = unit->base.y;
 }
 
-UNIT unit_create_base(DIM x, DIM y, uint32_t team, SPEED max_speed, SPEED speed, SPEED accel, DIM size, HEALTH max_health, HEALTH health, uint64_t attack, uint64_t defense)
+UNIT unit_create_base(DIM x, DIM y, uint32_t team, SPEED max_speed, SPEED speed, SPEED accel, DIM size, HEALTH max_health, HEALTH health, uint64_t attack, uint64_t defense, DIM range, uint32_t attack_delay)
 {
 	UNIT new_unit;
 
 	new_unit.base.team = team;
 	new_unit.base.selected = 0;
+	new_unit.base.action = UNIT_ACTION_NONE;
 	new_unit.base.path = NULL;
 	new_unit.base.x = x;
 	new_unit.base.y = y;
@@ -54,6 +51,10 @@ UNIT unit_create_base(DIM x, DIM y, uint32_t team, SPEED max_speed, SPEED speed,
 	new_unit.base.health = health;
 	new_unit.base.attack = attack;
 	new_unit.base.defense = defense;
+	new_unit.base.attack_target = NULL;
+	new_unit.base.range = range;
+	new_unit.base.attack_delay = attack_delay;
+	new_unit.base.attack_delay_current = 0;
 
 	return new_unit;
 }
@@ -108,6 +109,43 @@ void unit_insert(UNIT_LIST **unit_list, UNIT_LIST **end, UNIT new_unit)
 		follower->next->prev = follower;
 		follower->next->unit = new_unit;
 		*end = follower->next;
+	}
+}
+
+void unit_remove(UNIT_LIST *unit, UNIT_LIST **start, UNIT_LIST **end)
+{
+	if (unit != NULL)
+	{
+		UNIT_LIST *next = unit->next;
+		UNIT_LIST *prev = unit->prev;
+		if (next != NULL)
+		{
+			if (prev != NULL)
+			{
+				next->prev = prev;
+				prev->next = next;
+			}
+			else
+			{
+				next->prev = NULL;
+				*start = next;
+			}
+		}
+		else
+		{
+			if (prev != NULL)
+			{
+				prev->next = NULL;
+				*end = prev;
+			}
+			else
+			{
+				*start = NULL;
+				*end = NULL;
+			}
+		}
+
+		free(unit);
 	}
 }
 
@@ -422,7 +460,7 @@ void unit_path_delete(UNIT *unit)
 	unit->base.path = NULL;
 }
 
-void unit_path_step(UNIT *unit)
+void _unit_path_step(UNIT *unit)
 {
 	if (unit->base.path != NULL)
 	{
@@ -441,5 +479,128 @@ void unit_path_step(UNIT *unit)
 			unit->base.y = unit->base.path->y;
 			unit_path_remove(unit);
 		}
+	}
+}
+
+void _unit_attack_move(UNIT *unit)
+{
+	DIM x_sep = unit->base.attack_target->unit.base.x - unit->base.x;
+	DIM y_sep = unit->base.attack_target->unit.base.y - unit->base.y;
+	DIM len = world_dim_sqrt(world_dim_mult(x_sep, x_sep) + world_dim_mult(y_sep, y_sep));
+
+	if (len <= unit->base.range)
+	{
+		// we can hit them
+		_unit_attack_target(unit);
+	}
+	else
+	{
+		// we can't hit them, so step along our path to them
+		_unit_path_step(unit);
+	}
+}
+
+void _unit_attack_target(UNIT *unit)
+{
+	DIM x_sep = unit->base.path->x - unit->base.x;
+	DIM y_sep = unit->base.path->y - unit->base.y;
+	DIM len = world_dim_sqrt(world_dim_mult(x_sep, x_sep) + world_dim_mult(y_sep, y_sep));
+
+	if (len <= unit->base.range)
+	{
+		// we can hit them
+
+		UNIT *target = &(unit->base.attack_target->unit);
+
+		if (target != NULL)
+		{
+			if (unit->base.attack_delay_current == 0)
+			{
+				uint64_t damage;
+				if (unit->base.attack <= target->base.defense)
+				{
+					damage = 1;
+				}
+				else
+				{
+					damage = unit->base.attack - target->base.defense;
+				}
+
+				if (target->base.health <= damage)
+				{
+					target->base.health = 0;
+					unit_path_remove(unit);
+					unit->base.attack_target = NULL;
+					unit->base.action = UNIT_ACTION_NONE;
+				}
+				else
+				{
+					target->base.health -= (HEALTH)damage;
+				}
+				unit->base.attack_delay_current = unit->base.attack_delay;
+			}
+			else
+			{
+				unit->base.attack_delay_current -= 1;
+			}
+		}
+	}
+}
+
+void unit_do_action(UNIT *unit)
+{
+	if (unit->base.attack_target != NULL)
+	{
+		if (unit->base.path != NULL)
+		{
+			unit->base.action = UNIT_ACTION_ATTACK_MOVE;
+		}
+		else
+		{
+			unit->base.action = UNIT_ACTION_ATTACK;
+		}
+	}
+	else
+	{
+		if (unit->base.path != NULL)
+		{
+			unit->base.action = UNIT_ACTION_MOVE;
+		}
+	}
+
+	switch (unit->base.action)
+	{
+	case UNIT_ACTION_MOVE:
+		_unit_path_step(unit);
+		break;
+	case UNIT_ACTION_ATTACK:
+		_unit_attack_target(unit);
+		break;
+	case UNIT_ACTION_ATTACK_MOVE:
+		_unit_attack_move(unit);
+		break;
+	case UNIT_ACTION_NONE:
+	default:
+		break;
+	}
+}
+
+void unit_attack_target(UNIT *unit, UNIT_LIST *target)
+{
+	unit->base.action = UNIT_ACTION_ATTACK_MOVE;
+	unit->base.attack_target = target;
+}
+
+void unit_destroy_dead_units(UNIT_LIST **unit_list, UNIT_LIST **end)
+{
+	UNIT_LIST *list = *unit_list;
+	while (list != NULL)
+	{
+		UNIT_LIST *next = list->next;
+		if (list->unit.base.health == 0)
+		{
+			unit_remove(list, unit_list, end);
+		}
+		list = next;
 	}
 }
